@@ -1,0 +1,122 @@
+Developer Guide:
+
+Fruit Beer Game - Developer Blueprint
+Project Overview
+Build a web-based, real-time Fruit Beer Game (Beer Distribution Game variant) simulation platform for experiential learning. 
+Players assume roles in a 4-tier supply chain (Retailer → Wholesaler → Distributor → Manufacturer). Instructors create sessions with configurable parameters; players join via code and play in weekly decision cycles. The server is the canonical state holder and advances weeks when all orders are submitted or when a timer expires. Bots fill missing player roles.
+Technical Stack (Recommended)
+Frontend:
+- React + TypeScript
+- Tailwind CSS
+- Recharts or Chart.js
+- socket.io-client
+- react-query
+Backend:
+- Node.js + TypeScript + Express
+- socket.io
+- PostgreSQL (persistent)
+- Redis (pub/sub, session, job locking)
+- BullMQ (jobs and timers)
+- TypeORM / Prisma (ORM)
+- Jest (unit tests)
+Infrastructure:
+- Docker / Docker Compose
+- Nginx (reverse proxy)
+- CI: GitHub Actions
+- Monitoring: Prometheus + Grafana, Sentry
+High-level Architecture
+- API Gateway (Express)
+  - REST endpoints for sessions, players, reports
+  - WebSocket server (Socket.io) for real-time events
+- Database: PostgreSQL for persistent storage (sessions, players, game_states, demands, decisions, scripts)
+- Redis: socket.io adapter + job queue + ephemeral live state
+- Worker: BullMQ workers to manage timers, bot orders, fallback orders, CSV generation
+- Frontend: Instructor dashboard + Player lobby + Game screen + Debrief pages
+Data flow:
+Instructor creates session → DB stores configuration → Players join via code → server initializes game_states → each week server starts timer → players submit orders via REST/socket → worker enforces timer and fallback → server runs processWeekProgression → save snapshots → emit week_advanced → repeat until max_weeks → generate report.
+Database Schema (summary)
+Core tables:
+- users
+- sessions
+- demands
+- demand_patterns
+- scripts
+- chains
+- players
+- game_states
+- decisions
+Refer to the provided SQL migration file (001_init.sql) for full DDL. Ensure indexes on session id, chain id, week numbers for performance.
+Core Game Engine (pseudocode & invariants)
+Key invariants:
+- Server time is authoritative; timers run server-side.
+- Week progression is atomic per chain.
+- Each player may submit one order per week; duplicates ignored.
+- Pipelines (order_pipeline, shipment_pipeline) are FIFO arrays with length = lead_time.
+Essential functions:
+- initializeGame(sessionId, chainId)
+- placeOrder(playerId, chainId, weekNumber, orderQuantity, timeTaken)
+- processWeekProgression(chainId, weekNumber) — apply shipments, process orders, calculate costs, shift pipelines, persist state, emit events.
+Use DB transactions to guarantee atomic updates. Persist snapshots (game_states) for replay and analytics.
+API & Socket Contract
+REST examples:
+- POST /api/sessions
+- GET /api/sessions/:code
+- POST /api/sessions/:id/start
+- POST /api/sessions/:id/join
+- POST /api/players/:id/order
+- GET /api/sessions/:id/report
+Socket events:
+- server -> 'timer_start' {week, seconds}
+- client -> 'place_order' {playerId, week, qty}
+- server -> 'order_placed' {playerId, week, qty}
+- server -> 'week_advanced' {week, chainStates[]}
+- server -> 'script_message' {week, text}
+- server -> 'session_ended' {summary}
+Bots & Timer Logic
+- When session starts, schedule timer jobs for each chain week using BullMQ.
+- Timer expiry: if player hasn't submitted order, use last submitted order or initial_orders.
+- Bot strategies:
+  1. Naive: repeat downstream last order.
+  2. Smoothing: exponential smoothing on past demands.
+  3. Cost-aware: simulate lead_time window and pick order minimizing expected holding+backlog costs.
+Bots submit via same 'placeOrder' API.
+Frontend Requirements
+Pages:
+- Landing & Auth
+- Instructor Dashboard (Sessions, Create, Configure, Start, End, Download)
+- Lobby (Join by code)
+- Player Game Screen (role-specific)
+- Debrief/Analytics
+Player screen components:
+- Current week & countdown timer
+- Inventory panel (current inventory, incoming receipts, backlog)
+- Pipeline visualization (lead time boxes)
+- Order input & submit button
+- Message area (script messages)
+- Small charts (orders/inventory/backlog over time)
+Analytics & Reporting
+- Store per-week snapshots for all roles.
+- Post-session CSV export with rows: session, chain, week, role, inventory, backlog, order, receipt, shipment, holding_cost, backlog_cost, total_cost.
+- Live analytics: current week, % players responded, per-chain charts.
+- Metrics: total_cost, bullwhip_ratio (variance upstream / variance retailer), order_variance, fulfillment_rate, inventory_turnover.
+Testing & QA
+- Unit tests for engine functions using deterministic scenarios (e.g., 4->8 demand step).
+- Integration tests for APIs + socket flows (simulate players + bots).
+- Load tests for concurrent sessions and socket connections (k6, Artillery).
+- Edge cases: lead_time extremes, no players (shouldn't start), reconnects, duplicate orders.
+Deployment & Scaling
+- Dockerize services: api, worker, frontend, postgres, redis.
+- Use Redis adapter for socket.io; ensure sticky sessions or adapter when scaled.
+- Horizontal scale: multiple API/Socket nodes behind LB + redis adapter.
+- Use managed Postgres & Redis in production; set backups and monitoring.
+Deliverables & Milestones (suggested)
+Phase 1: DB + core engine + unit tests (2-3 weeks)
+Phase 2: REST API + simple frontend lobby (2 weeks)
+Phase 3: Real-time sockets + timers + bots (3-4 weeks)
+Phase 4: Analytics + CSV reports + instructor dashboard (2 weeks)
+Phase 5: Testing, deployment, documentation (2 weeks)
+Appendix: Useful Implementation Notes
+- Use JSONB columns for pipelines to simplify serialization.
+- Make processWeekProgression idempotent and use optimistic locking.
+- Persist events (order_placed, week_advanced) to an audit table for replay.
+- Keep the game engine pure (separate side effects) to ease testing.

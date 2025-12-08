@@ -1,0 +1,87 @@
+
+Cursor AI Prompt: Build Fruit Beer Game Simulation Platform (Full-Stack)
+
+Goal:
+You are to implement a full-stack Fruit Beer Game platform (Retailer→Wholesaler→Distributor→Manufacturer), matching the specification below. Deliver a working repo with backend, frontend, worker, and tests.
+
+Tech stack (use these unless explicitly requested otherwise):
+- Frontend: React + TypeScript, Tailwind CSS, socket.io-client
+- Backend: Node.js + TypeScript, Express, socket.io
+- DB: PostgreSQL (use Prisma or TypeORM)
+- Cache/Jobs: Redis + BullMQ
+- Tests: Jest (unit), Playwright or Cypress (E2E)
+- Containerization: Docker Compose
+
+Repository requirements:
+1. Clear backend/frontend separation.
+2. README with run instructions (dev & prod), migrations, env vars.
+3. Docker Compose file for local dev (api, worker, postgres, redis, frontend).Optional (Later stage)
+4. Migration SQL (001_init.sql) applied via Prisma/TypeORM migrations or psql.Optional (Later stage)
+5. Seed script to create an instructor user and sample session with demand pattern (4x -> 8x).
+
+Core Features to implement:
+A. Database models & migrations (see provided SQL).
+B. REST APIs:
+   - Create session (POST /api/sessions)
+   - Get session by code (GET /api/sessions/:code)
+   - Join session (POST /api/sessions/:id/join)
+   - Start session (POST /api/sessions/:id/start)
+   - End session (POST /api/sessions/:id/end)
+   - Place order (POST /api/players/:id/order)
+   - Download report (GET /api/sessions/:id/report)
+C. Socket events & rooms:
+   - Rooms: session:<sessionId>, session:<sessionId>:chain:<chainId>
+   - Events: timer_start, order_placed, week_advanced, script_message, session_ended
+D. Game engine:
+   - Implement initializeGame and processWeekProgression.
+   - Use DB transactions when progressing a week.
+   - Use Redis/BullMQ for timers, fallback orders, and bot scheduling.
+E. Bots:
+   - Implement Naive and Smoothing bot strategies and register bots when players < 4.
+F. Frontend:
+   - Instructor dashboard: create session, configure settings, start & end.
+   - Lobby: join by code and display waiting players.
+   - Player screen: timer, order input, pipeline visualization, per-week stats.
+   - Debrief: charts and CSV download.
+G. Analytics & report:
+   - Save game_states per week.
+   - Implement CSV export matching provided example formats.
+
+Testing:
+- Provide Jest unit tests for processWeekProgression covering the 4→8 demand step scenario and edge cases.
+- Provide at least one E2E test that boots the app (docker-compose), creates a session, spawns 4 simulated players (or bots), runs 3 weeks, and validates state.
+
+Quality expectations:
+- Clean TypeScript types, error handling, and logging.
+- Readable, well-documented code and small commits (feature-per-commit).
+- Include a development checklist in README.
+
+Acceptance criteria:
+1. A reviewer can clone the repo, run `docker-compose up`, visit the frontend, create a session, join as 1 human + bots, start the game, and play through a few weeks.
+2. Backend unit tests pass.
+3. CSV report exports match the schema in examples.
+
+Deliverables:
+- GitHub repo url (or zip)
+- README with setup steps and environment variables
+- Migration SQL or migration folder
+- Basic seed data
+- Tests and instructions to run them
+
+Priority work breakdown for Cursor AI (task list):
+1. Setup monorepo skeleton + Docker Compose.
+2. Implement DB models & run migration.
+3. Implement API endpoints & basic frontend pages.
+4. Implement workers + socket events.
+5. Implement game engine & unit tests.
+6. Implement bot strategies.
+7. Polishing: charts, reports, E2E tests, documentation.
+
+Notes for Cursor's agent:
+- Write small, testable functions for the engine and isolate side effects.
+- Use server time as authoritative for timers.
+- Make the UI minimal but functional; prioritize correctness over styling.
+- Include sample data to reproduce the user-provided sessions exactly (seed with demand pattern and the sessions from the user's reports).
+- Produce commits with descriptive messages.
+
+End of prompt.

@@ -1,0 +1,247 @@
+// Universal Simulation Platform Schema
+// Supports all 11 simulations with flexible configuration
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================
+// CORE TABLES (Universal)
+// ============================================
+
+model User {
+  id            String   @id @default(uuid())
+  email         String   @unique
+  password_hash String?  // Null for OAuth users
+  full_name     String
+  role          UserRole @default(STUDENT)
+  
+  // OAuth fields
+  oauth_provider String?
+  oauth_id       String?
+  email_verified Boolean  @default(false)
+  
+  created_at DateTime  @default(now())
+  updated_at DateTime  @updatedAt
+  last_login DateTime?
+
+  // Relations
+  sessions_created  GameSession[]        @relation("FacilitatorSessions")
+  participations    SessionParticipant[]
+
+  @@map("users")
+}
+
+enum UserRole {
+  STUDENT
+  FACILITATOR
+  ADMIN
+}
+
+model Simulation {
+  id          Int    @id @default(autoincrement())
+  slug        String @unique
+  name        String
+  type        String
+  author      String
+  description String
+  
+  // Metadata
+  duration_minutes Int
+  difficulty_level String // beginner, intermediate, advanced
+  learning_objectives Json // Array of strings
+  
+  // Player config
+  max_players    Int
+  min_players    Int
+  supports_bots  Boolean @default(false)
+  
+  // Configuration schema
+  config_schema Json? // JSON Schema for validation
+  tags          Json? // Array of tags
+  
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+  
+  // Relations
+  sessions GameSession[]
+
+  @@map("simulations")
+}
+
+model GameSession {
+  id             String        @id @default(uuid())
+  simulation_id  Int
+  session_code   String        @unique
+  session_name   String
+  description    String?
+  
+  facilitator_id String?
+  
+  // Game configuration (simulation-specific JSON)
+  configuration  Json
+  
+  // Session state
+  status         SessionStatus @default(SETUP)
+  current_round  Int          @default(0)
+  max_rounds     Int?
+  
+  created_at  DateTime  @default(now())
+  updated_at  DateTime  @updatedAt
+  started_at  DateTime?
+  completed_at DateTime?
+
+  // Relations
+  simulation   Simulation           @relation(fields: [simulation_id], references: [id])
+  facilitator  User?                @relation("FacilitatorSessions", fields: [facilitator_id], references: [id])
+  participants SessionParticipant[]
+  decisions    PlayerDecision[]
+  state_cache  SessionStateCache?
+
+  @@index([session_code])
+  @@index([simulation_id])
+  @@index([facilitator_id])
+  @@index([status])
+  @@map("game_sessions")
+}
+
+enum SessionStatus {
+  SETUP
+  WAITING
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+model SessionParticipant {
+  id         String   @id @default(uuid())
+  session_id String
+  user_id    String?  // Null if anonymous or bot
+  
+  player_name String
+  player_code String? // For anonymous joining
+  role        String  // Simulation-specific role (e.g., RETAILER, WHOLESALER)
+  is_bot      Boolean @default(false)
+  bot_strategy String? // Bot strategy if is_bot = true
+  
+  // Performance tracking
+  score       Float?
+  rank        Int?
+  
+  joined_at DateTime @default(now())
+
+  // Relations
+  session   GameSession      @relation(fields: [session_id], references: [id], onDelete: Cascade)
+  user      User?            @relation(fields: [user_id], references: [id])
+  decisions PlayerDecision[]
+
+  @@unique([session_id, role]) // One player per role per session
+  @@index([session_id])
+  @@index([user_id])
+  @@map("session_participants")
+}
+
+model PlayerDecision {
+  id             String   @id @default(uuid())
+  session_id     String
+  participant_id String
+  round_number   Int
+  
+  // Decision payload (simulation-specific)
+  decision_payload Json
+  
+  // Metadata
+  time_taken_ms  Int?     // Time taken to make decision
+  created_at     DateTime @default(now())
+
+  // Relations
+  session     GameSession        @relation(fields: [session_id], references: [id], onDelete: Cascade)
+  participant SessionParticipant @relation(fields: [participant_id], references: [id], onDelete: Cascade)
+
+  @@unique([session_id, participant_id, round_number])
+  @@index([session_id, round_number])
+  @@index([participant_id])
+  @@map("player_decisions")
+}
+
+// Optional: Store session state in DB instead of Redis
+model SessionStateCache {
+  session_id String   @id
+  state_data Json     // Complete game state
+  updated_at DateTime @updatedAt
+
+  session GameSession @relation(fields: [session_id], references: [id], onDelete: Cascade)
+
+  @@map("session_state_cache")
+}
+
+// ============================================
+// FRUIT BEER GAME SPECIFIC TABLES (Optional)
+// ============================================
+// These tables provide detailed tracking for Fruit Beer Game
+// Other simulations can use similar patterns or rely on JSON fields
+
+model FruitBeerDemandPattern {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  pattern     Json     // Array of {week: number, demand: number}
+  created_at  DateTime @default(now())
+
+  @@map("fruit_beer_demand_patterns")
+}
+
+model FruitBeerGameState {
+  id         String   @id @default(uuid())
+  session_id String
+  chain_id   String?  // For multi-chain scenarios
+  week       Int
+  
+  // State snapshot
+  inventory       Json // Per role
+  backorders      Json // Per role
+  orders_placed   Json // Per role
+  shipments       Json // Pipeline state
+  costs           Json // Per role
+  
+  created_at DateTime @default(now())
+
+  @@unique([session_id, week])
+  @@index([session_id, week])
+  @@map("fruit_beer_game_states")
+}
+
+// ============================================
+// FUTURE: REPORT TABLES (Currently disabled)
+// ============================================
+// REPORTS_DISABLED: Uncomment when implementing report generation
+
+// model Report {
+//   id              String     @id @default(uuid())
+//   session_id      String
+//   participant_id  String?    // Null for facilitator reports
+//   report_type     ReportType
+//   
+//   // Storage
+//   s3_key          String?
+//   presigned_url   String?
+//   local_path      String?    // For non-S3 deployments
+//   
+//   generated_at         DateTime  @default(now())
+//   retention_expires_at DateTime?
+//   
+//   @@index([session_id])
+//   @@map("reports")
+// }
+// 
+// enum ReportType {
+//   PARTICIPANT
+//   FACILITATOR
+//   CERTIFICATE
+// }
+

@@ -1,0 +1,340 @@
+FULL SIMULATION LOGIC & FACILITATOR/STUDENT ROLES (ALL 11 SIMULATIONS)
+===========================================================================
+This document contains complete simulation logic, state variables, turn loops,
+and facilitator/student roles for all 11 simulations. This text is 
+formatted to use as a backend development reference.
+
+-------------------------------------------------------------------------------
+1) TO PAY OR NOT TO PAY (HR COMPENSATION)
+-------------------------------------------------------------------------------
+Core Concept:
+Design compensation packages under market and budget constraints while selecting
+the right candidates.
+
+State Model:
+- company profile
+- job roles, salary bands
+- candidate list (salary expectation, skill-fit score)
+- player's chosen compensation package
+- negotiation simulation outcomes
+
+Facilitator Role:
+- configure job role, scenario difficulty, budget
+- start/stop session
+- monitor participant decision behavior
+
+Student Role:
+- evaluate candidates
+- choose salary, benefits, bonus structure
+- submit compensation decisions
+- receive acceptance/rejection outcomes
+
+Turn Loop:
+1. Review candidate profiles
+2. Set compensation package
+3. Negotiation engine simulates acceptance probability
+4. Score updates based on fit and cost alignment
+
+-------------------------------------------------------------------------------
+2) SUSTAINABLE SELECT (MADM DECISION MAKING)
+-------------------------------------------------------------------------------
+Core Concept:
+Apply decision-making models (WSM, WPM, TOPSIS, MOORA) to select the best project.
+
+State Model:
+- alternatives and their data
+- attributes + benefit/cost types
+- player’s assigned weights
+- computed ranking for each algorithm
+
+Facilitator:
+- configure scenario difficulty
+- choose expert sets and attribute complexity
+
+Student:
+- pick experts
+- choose criteria weights
+- fill decision matrices
+- view final ranking
+
+Turn Flow:
+1. Choose experts
+2. Enter weights
+3. System normalizes data
+4. Apply chosen algorithm
+5. Display ranking + explanation
+
+-------------------------------------------------------------------------------
+3) THE ONION DILEMMA (GAME THEORY)
+-------------------------------------------------------------------------------
+Core Concept:
+Two players repeatedly interact: Farmer Cooperative vs Retail Chain.
+
+State Variables:
+- trust scores
+- payoff matrix
+- pricing/quantity decisions
+- cooperation vs competition dynamics
+
+Facilitator:
+- configure shocks (weather, price collapse)
+- adjust difficulty or market volatility
+
+Student:
+- choose pricing strategy
+- choose supply volumes
+- observe counterpart response & payoff
+
+Round Loop:
+1. Show market event
+2. Both sides set decisions
+3. Payoff calculated
+4. Trust updated
+5. Next round
+
+-------------------------------------------------------------------------------
+4) DUAL SOURCE DILEMMA (PROCUREMENT RISK)
+-------------------------------------------------------------------------------
+Core Concept:
+Choose between fast-expensive vs slow-cheap suppliers.
+
+State Model:
+- supplier parameters (lead time, reliability, cost)
+- inventory, backlog, pipeline
+- weekly demand
+
+Facilitator:
+- configure supplier reliability randomness
+
+Student:
+- place orders to both suppliers
+- maintain inventory & cash flow
+
+Weekly Flow:
+1. Previous orders arrive
+2. Demand occurs
+3. Cost applied
+4. Player places fresh orders
+
+-------------------------------------------------------------------------------
+5) DEFECT DETECTIVES (7 QC TOOLS)
+-------------------------------------------------------------------------------
+Core Concept:
+Investigate quality defects using the 7 QC tools.
+
+State Model:
+- defect categories
+- raw dataset (pre-intervention)
+- intervention selection
+- improved dataset
+
+Facilitator:
+- choose industry scenario (factory/food delivery)
+- set defect difficulty curves
+
+Student:
+- run QC tools (pareto, histogram, fishbone)
+- identify root cause
+- choose improvement actions
+
+Flow:
+1. Explore dataset
+2. Identify defect drivers
+3. Select corrective action
+4. System simulates post-action performance
+
+-------------------------------------------------------------------------------
+6) ORDER OPS (FOOD DELIVERY PLATFORM SIMULATION)
+-------------------------------------------------------------------------------
+Core Concept:
+Restaurant + Platform roles simulate real-time logistics.
+
+State Variables:
+- orders, drivers, customer locations
+- delivery time, customer satisfaction
+- commissions, costs
+
+Facilitator:
+- configure number of drivers
+- set market structure (monopoly/duopoly)
+- inject events: rain, festival rush, traffic spikes
+
+Student:
+Restaurant:
+- accept/reject orders
+- set prices
+Platform:
+- assign drivers
+- manage fleet
+- adjust commission rates
+
+Real-Time Loop:
+- order generation
+- driver routing simulation
+- delivery events
+- KPI updates
+
+-------------------------------------------------------------------------------
+7) THEORY OF CONSTRAINTS (TOC FACTORY SIM)
+-------------------------------------------------------------------------------
+Core Concept:
+Identify bottlenecks & maximize throughput.
+
+State Variables:
+- machines[], capacity, setup time
+- WIP, flow rate
+- profit, throughput
+
+Facilitator:
+- configure machine parameters
+- introduce new constraints
+
+Student:
+- decide release quantity
+- set batch sizes
+- prioritize product types
+
+Loop:
+1. Simulate production
+2. Compute WIP, queues, bottleneck
+3. Show profit/KPI
+4. Next round
+
+-------------------------------------------------------------------------------
+8) EV GAMBIT (EV INDUSTRY STRATEGY SIM)
+-------------------------------------------------------------------------------
+Core Concept:
+Choose strategic actions for market share growth.
+
+State Variables:
+- brand perception, market share
+- manufacturing cost
+- policy changes
+- competitor responses (AI)
+
+Facilitator:
+- select difficulty
+- inject economic/policy events
+
+Student:
+- choose strategy: pricing, R&D, marketing, capacity investment
+- read KPIs
+
+Round Loop:
+1. Present industry event
+2. Player selects action
+3. System computes outcomes
+4. Update company metrics
+
+-------------------------------------------------------------------------------
+9) CUSTOMER IN A STORE (STOCK-FLOW COGNITION)
+-------------------------------------------------------------------------------
+Core Concept:
+Test ability to interpret stock-flow graphs accurately.
+
+State Variables:
+- inflow/outflow patterns
+- cognitive reasoning flags
+- categories of stock-flow errors
+
+Facilitator:
+- choose training type (learning / decomposition / feedback)
+
+Student:
+- answer stock-flow questions
+- receive feedback (optional)
+
+Flow:
+1. Show graph
+2. Player answers
+3. Engine evaluates reasoning
+4. Error metrics updated
+
+-------------------------------------------------------------------------------
+10) FRUIT BEER GAME (SUPPLY CHAIN BEER GAME)
+-------------------------------------------------------------------------------
+Core Concept:
+Four-tier supply chain game demonstrating bullwhip effect.
+
+State Variables:
+- inventory, pipeline, backlog
+- orders placed, demand received
+- weekly cost
+
+Facilitator:
+- configure demand pattern (constant/step/random)
+- adjust lead time
+
+Student:
+- place upstream order each week
+- fulfill downstream demand
+- aim to minimize cost
+
+Week Loop:
+1. Receive shipment
+2. Demand arrives
+3. Fulfillment or backlog
+4. Compute inventory/backorder
+5. Player places next order
+
+-------------------------------------------------------------------------------
+11) GENERAL TEMPLATE FOR FUTURE SIMULATIONS
+-------------------------------------------------------------------------------
+Standard State Engine Pattern:
+- players: list
+- roles: defined per simulation
+- turn mechanics: round-based or real-time
+- KPIs: stored per round
+- events: facilitator-injectable
+- logs: decision history
+- scoring: per simulation
+
+-------------------------------------------------------------------------------
+FACILITATOR VS STUDENT ROLE SUMMARY
+-------------------------------------------------------------------------------
+Facilitator Responsibilities:
+- Create session
+- Set difficulty
+- Add/remove bots
+- Trigger shocks/events
+- Observe dashboards
+- Close session
+
+Student Responsibilities:
+- Join session with code
+- Make decisions every round
+- Manage resources (inventory/cash/time)
+- Follow simulation objectives
+- Track KPIs and adapt strategy
+
+-------------------------------------------------------------------------------
+SHARED BACKEND ENGINE ARCHITECTURE
+-------------------------------------------------------------------------------
+Each simulation follows this base engine pattern:
+
+BaseGameEngine {
+  loadConfig()
+  initializeState()
+  applyPlayerAction()
+  computeNextState()
+  broadcastStateUpdate()
+  endSession()
+}
+
+Simulation-Specific Engines:
+- FruitBeerEngine
+- TOCEngine
+- OrderOpsEngine
+- MADMEngine
+- HRCompEngine
+- EVGambitEngine
+- etc.
+
+Shared Backend Components:
+- WebSocket event handlers
+- Redis session cache
+- Postgres game logs
+- Role assignment logic
+- Session lifecycle management
+
+
