@@ -124,23 +124,26 @@ async function seed() {
     const simulations = JSON.parse(data);
 
     for (const sim of simulations) {
+      const fields = {
+        slug: sim.slug,
+        name: sim.name,
+        type: sim.type,
+        author: sim.author,
+        description: sim.description,
+        duration_minutes: sim.duration_minutes,
+        difficulty_level: sim.difficulty_level,
+        learning_objectives: sim.learning_objectives,
+        max_players: sim.max_players,
+        min_players: sim.min_players,
+        supports_bots: sim.supports_bots,
+        tags: sim.tags,
+      };
+      // Refresh catalogue metadata on every seed run so corrections in
+      // simulations-data.json (e.g. author attribution) propagate to the DB.
       await prisma.simulation.upsert({
         where: { slug: sim.slug },
-        create: {
-          slug: sim.slug,
-          name: sim.name,
-          type: sim.type,
-          author: sim.author,
-          description: sim.description,
-          duration_minutes: sim.duration_minutes,
-          difficulty_level: sim.difficulty_level,
-          learning_objectives: sim.learning_objectives,
-          max_players: sim.max_players,
-          min_players: sim.min_players,
-          supports_bots: sim.supports_bots,
-          tags: sim.tags,
-        },
-        update: {},
+        create: fields,
+        update: fields,
       });
     }
 

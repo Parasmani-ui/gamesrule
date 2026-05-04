@@ -1,0 +1,23 @@
+{
+  "default": [
+    { "id": "tech",       "name": "Technical Skills",   "importance": 0, "optimalWeight": 0.35 },
+    { "id": "leadership", "name": "Leadership Ability", "importance": 0, "optimalWeight": 0.25 },
+    { "id": "experience", "name": "Experience (Years)", "importance": 0, "optimalWeight": 0.20 },
+    { "id": "education",  "name": "Education",          "importance": 0, "optimalWeight": 0.10 },
+    { "id": "cultural",   "name": "Cultural Fit",       "importance": 0, "optimalWeight": 0.10 }
+  ],
+  "tech-startup": [
+    { "id": "tech",       "name": "Technical Depth",         "importance": 0, "optimalWeight": 0.25 },
+    { "id": "leadership", "name": "Leadership & Vision",     "importance": 0, "optimalWeight": 0.30 },
+    { "id": "experience", "name": "Relevant Experience",     "importance": 0, "optimalWeight": 0.15 },
+    { "id": "education",  "name": "Education",               "importance": 0, "optimalWeight": 0.10 },
+    { "id": "cultural",   "name": "Cultural Fit & Adaptability", "importance": 0, "optimalWeight": 0.20 }
+  ],
+  "manufacturing": [
+    { "id": "tech",       "name": "Technical / Process Skills", "importance": 0, "optimalWeight": 0.20 },
+    { "id": "leadership", "name": "Team Leadership",            "importance": 0, "optimalWeight": 0.15 },
+    { "id": "experience", "name": "Plant Experience (Years)",   "importance": 0, "optimalWeight": 0.40 },
+    { "id": "education",  "name": "Education / Certifications", "importance": 0, "optimalWeight": 0.15 },
+    { "id": "cultural",   "name": "Cultural Fit",               "importance": 0, "optimalWeight": 0.10 }
+  ]
+}

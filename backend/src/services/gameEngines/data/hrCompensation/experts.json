@@ -1,0 +1,99 @@
+{
+  "default": [
+    {
+      "id": "exp1",
+      "name": "Dr. Aparna Iyer",
+      "specialty": "Compensation Strategy",
+      "credibility": 0.9,
+      "cost": 5000
+    },
+    {
+      "id": "exp2",
+      "name": "Prof. Raj Patel",
+      "specialty": "Talent Acquisition",
+      "credibility": 0.85,
+      "cost": 4000
+    },
+    {
+      "id": "exp3",
+      "name": "Ms. Sarah Chen",
+      "specialty": "Market Analysis",
+      "credibility": 0.7,
+      "cost": 3000
+    },
+    {
+      "id": "exp4",
+      "name": "Mr. Karthik Rao",
+      "specialty": "Performance Metrics",
+      "credibility": 0.6,
+      "cost": 2000
+    }
+  ],
+  "tech-startup": [
+    {
+      "id": "ts_exp1",
+      "name": "Ms. Tara Krishnamurthy",
+      "specialty": "Startup Compensation Design",
+      "credibility": 0.92,
+      "cost": 6000
+    },
+    {
+      "id": "ts_exp2",
+      "name": "Mr. Daniel Park",
+      "specialty": "Equity & Stock Options",
+      "credibility": 0.88,
+      "cost": 5000
+    },
+    {
+      "id": "ts_exp3",
+      "name": "Prof. Vikrant Singh",
+      "specialty": "Engineering Talent Markets",
+      "credibility": 0.82,
+      "cost": 4500
+    },
+    {
+      "id": "ts_exp4",
+      "name": "Ms. Anya Petrov",
+      "specialty": "Product Leadership Hiring",
+      "credibility": 0.75,
+      "cost": 4000
+    },
+    {
+      "id": "ts_exp5",
+      "name": "Dr. Sameer Mehta",
+      "specialty": "Growth-Stage Org Design",
+      "credibility": 0.68,
+      "cost": 3500
+    }
+  ],
+  "manufacturing": [
+    {
+      "id": "mfg_exp1",
+      "name": "Mr. Suresh Mahajan",
+      "specialty": "Plant Compensation Bands",
+      "credibility": 0.9,
+      "cost": 5000
+    },
+    {
+      "id": "mfg_exp2",
+      "name": "Ms. Geeta Krishnan",
+      "specialty": "Industrial Relations",
+      "credibility": 0.85,
+      "cost": 4500
+    },
+    {
+      "id": "mfg_exp3",
+      "name": "Mr. Robert Hayes",
+      "specialty": "Operations Talent",
+      "credibility": 0.7,
+      "cost": 3500
+    },
+    {
+      "id": "mfg_exp4",
+      "name": "Mr. Arjun Pillai",
+      "specialty": "Shop-Floor HR",
+      "credibility": 0.65,
+      "cost": 2500
+    }
+  ]
+}

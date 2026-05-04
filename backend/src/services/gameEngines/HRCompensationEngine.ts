@@ -1,27 +1,36 @@
+import fs from 'fs/promises';
+import path from 'path';
 import { BaseGameEngine } from './BaseGameEngine';
 import { ActionResult, RoundResult } from '../../types';
 import { prisma } from '../../db';
 
 /**
  * HR Compensation - "To Pay or Not to Pay" Simulation
- * 
+ *
  * PURPOSE:
  * - Teach Multi-Criteria Decision Making (MCDM) in HR context
  * - Demonstrate expert system design and weight elicitation
  * - Show how subjective judgments can be systematized
  * - Illustrate the complexity of compensation decisions
- * 
+ *
  * STAGES:
  * 1. Expert Selection: Choose domain experts for advice
  * 2. Attribute Weighting: Select and weight evaluation criteria
  * 3. Candidate Ranking: Rank candidates based on weighted criteria
- * 
+ *
  * COMPENSATION CALCULATION:
- * Base: ₹5,00,000
+ * Base: ₹5,00,000 (varies by scenario)
  * + Expert Selection Score (0 to ₹50,000)
  * + Attribute Weight Score (0 to ₹1,00,000)
  * + Ranking Match Score (0 to ₹3,00,000)
- * Final Package: ₹5,00,000 to ₹9,50,000
+ * Final Package: base to base + ₹4,50,000
+ *
+ * CONTENT:
+ * Experts, attributes, candidates, and scenario presets are externalised in
+ * `services/gameEngines/data/hrCompensation/`. The active scenario is selected
+ * by `config.scenario` (defaults to "default"); facilitators may also pass
+ * raw `experts` / `attributes` / `candidates` arrays in the session
+ * configuration to override the scenario content directly.
  */
 
 interface Expert {
@@ -46,11 +55,27 @@ interface Candidate {
   optimalRank: number; // Hidden correct ranking
 }
 
+interface ScenarioMeta {
+  id: string;
+  name: string;
+  description: string;
+  baseSalary: number;
+  expertSet: string;
+  attributeSet: string;
+  candidateSet: string;
+}
+
 interface HRCompensationConfig {
   experts: Expert[];
   attributes: Attribute[];
   candidates: Candidate[];
   baseSalary: number;
+  scenarioId?: string;
+  scenarioName?: string;
+}
+
+interface HRCompensationInitOptions extends Partial<HRCompensationConfig> {
+  scenario?: string;
 }
 
 interface HRCompensationGameState {
@@ -71,6 +96,8 @@ interface HRCompensationGameState {
   isComplete: boolean;
 }
 
+const DATA_DIR = path.join(__dirname, 'data', 'hrCompensation');
+
 export class HRCompensationEngine extends BaseGameEngine {
   private state!: HRCompensationGameState;
 
@@ -78,7 +105,7 @@ export class HRCompensationEngine extends BaseGameEngine {
     super(sessionId, 'hr-compensation');
   }
 
-  async initialize(config: Partial<HRCompensationConfig>): Promise<void> {
+  async initialize(config: HRCompensationInitOptions = {}): Promise<void> {
     this.log('Initializing HR Compensation simulation', config);
 
     const participants = await prisma.sessionParticipant.findMany({
@@ -91,18 +118,28 @@ export class HRCompensationEngine extends BaseGameEngine {
 
     const participant = participants[0];
 
-    // Default configuration
-    const defaultConfig: HRCompensationConfig = {
-      baseSalary: 500000,
-      experts: config.experts || this.generateExperts(),
-      attributes: config.attributes || this.generateAttributes(),
-      candidates: config.candidates || this.generateCandidates(),
+    const scenarioId = config.scenario || 'default';
+    const scenario = await this.loadScenarioMeta(scenarioId);
+
+    const experts = config.experts ?? (await this.loadContent<Expert[]>('experts.json', scenario.expertSet));
+    const attributes =
+      config.attributes ?? (await this.loadContent<Attribute[]>('attributes.json', scenario.attributeSet));
+    const candidates =
+      config.candidates ?? (await this.loadContent<Candidate[]>('candidates.json', scenario.candidateSet));
+
+    const finalConfig: HRCompensationConfig = {
+      baseSalary: config.baseSalary ?? scenario.baseSalary,
+      experts,
+      attributes,
+      candidates,
+      scenarioId: scenario.id,
+      scenarioName: scenario.name,
     };
 
     this.state = {
       sessionId: this.sessionId,
       participantId: participant.id,
-      config: defaultConfig,
+      config: finalConfig,
       currentStage: 'expert-selection',
       selectedExperts: [],
       attributeWeights: {},
@@ -113,16 +150,16 @@ export class HRCompensationEngine extends BaseGameEngine {
         rankingMatchScore: 0,
         totalScore: 0,
       },
-      finalCompensation: defaultConfig.baseSalary,
+      finalCompensation: finalConfig.baseSalary,
       isComplete: false,
     };
 
     await this.saveGameState();
     this.isInitialized = true;
-    this.log('HR Compensation initialized successfully');
+    this.log(`HR Compensation initialized successfully (scenario: ${scenario.id})`);
   }
 
-  async applyAction(participantId: string, action: any): Promise<ActionResult> {
+  async applyAction(_participantId: string, action: any): Promise<ActionResult> {
     this.ensureInitialized();
 
     const { stage, data } = action;
@@ -137,13 +174,13 @@ export class HRCompensationEngine extends BaseGameEngine {
     switch (stage) {
       case 'expert-selection':
         return await this.handleExpertSelection(data);
-      
+
       case 'attribute-weighting':
         return await this.handleAttributeWeighting(data);
-      
+
       case 'candidate-ranking':
         return await this.handleCandidateRanking(data);
-      
+
       default:
         return {
           success: false,
@@ -248,7 +285,7 @@ export class HRCompensationEngine extends BaseGameEngine {
     this.state.scores.rankingMatchScore = Math.round((correlation + 1) / 2 * 300000); // Map [-1,1] to [0, 300000]
 
     // Calculate final compensation
-    this.state.scores.totalScore = 
+    this.state.scores.totalScore =
       this.state.scores.expertSelectionScore +
       this.state.scores.attributeWeightScore +
       this.state.scores.rankingMatchScore;
@@ -275,8 +312,24 @@ export class HRCompensationEngine extends BaseGameEngine {
     };
   }
 
+  /**
+   * Stage-based simulation: rounds are not used. `advanceRound` is intentionally
+   * a no-op that mirrors the current `isComplete` flag so callers (the
+   * `facilitator_advance_round` socket handler, lazy re-init flows) get a
+   * well-formed RoundResult.
+   *
+   * Re: sockets/index.ts auto-advance — that branch fires only when
+   * `playerDecision` row count for the next round equals the participant
+   * count. This engine never writes to `playerDecision` (state lives in
+   * `sessionStateCache`), so the auto-advance condition is never satisfied
+   * for `hr-compensation`. No guard needed.
+   *
+   * The session's `max_rounds` (typically 1) is informational: enforcement
+   * lives at the session/facilitator layer, not in the engine. Stage gating
+   * (`isComplete` and the `currentStage` machine) is what actually prevents
+   * extra actions after completion.
+   */
   async advanceRound(): Promise<RoundResult> {
-    // Not applicable for this simulation (stage-based)
     return {
       success: true,
       message: 'Stage-based simulation',
@@ -288,6 +341,7 @@ export class HRCompensationEngine extends BaseGameEngine {
   async computeMetrics(): Promise<any> {
     this.ensureInitialized();
 
+    const maxFinal = this.state.config.baseSalary + 450000;
     return {
       finalCompensation: `₹${this.state.finalCompensation.toLocaleString('en-IN')}`,
       scoreBreakdown: {
@@ -295,8 +349,9 @@ export class HRCompensationEngine extends BaseGameEngine {
         attributeWeighting: `₹${this.state.scores.attributeWeightScore.toLocaleString('en-IN')}`,
         candidateRanking: `₹${this.state.scores.rankingMatchScore.toLocaleString('en-IN')}`,
       },
-      percentageOfMax: ((this.state.finalCompensation / 950000) * 100).toFixed(2) + '%',
+      percentageOfMax: ((this.state.finalCompensation / maxFinal) * 100).toFixed(2) + '%',
       expertiseLevel: this.getExpertiseLevel(),
+      scenario: this.state.config.scenarioId,
     };
   }
 
@@ -306,6 +361,8 @@ export class HRCompensationEngine extends BaseGameEngine {
     return {
       currentStage: this.state.currentStage,
       baseSalary: this.state.config.baseSalary,
+      scenarioId: this.state.config.scenarioId,
+      scenarioName: this.state.config.scenarioName,
       experts: this.state.config.experts.map(e => ({
         id: e.id,
         name: e.name,
@@ -328,7 +385,7 @@ export class HRCompensationEngine extends BaseGameEngine {
     };
   }
 
-  getParticipantState(participantId: string): any {
+  getParticipantState(_participantId: string): any {
     if (!this.isInitialized) return null;
 
     return {
@@ -343,140 +400,41 @@ export class HRCompensationEngine extends BaseGameEngine {
       optimalValues: this.state.isComplete ? {
         expertCredibilities: this.state.config.experts.map(e => ({ id: e.id, credibility: e.credibility })),
         optimalWeights: this.state.config.attributes.map(a => ({ id: a.id, optimalWeight: a.optimalWeight })),
-        optimalRanking: this.state.config.candidates.sort((a, b) => a.optimalRank - b.optimalRank).map(c => c.id),
+        optimalRanking: this.state.config.candidates.slice().sort((a, b) => a.optimalRank - b.optimalRank).map(c => c.id),
       } : undefined,
     };
   }
 
   // ===== HELPER METHODS =====
 
-  private generateExperts(): Expert[] {
-    return [
-      {
-        id: 'exp1',
-        name: 'Dr. Sarah Johnson',
-        specialty: 'Compensation Strategy',
-        credibility: 0.9,
-        cost: 5000,
-      },
-      {
-        id: 'exp2',
-        name: 'Prof. Raj Patel',
-        specialty: 'Talent Acquisition',
-        credibility: 0.85,
-        cost: 4000,
-      },
-      {
-        id: 'exp3',
-        name: 'Ms. Emily Chen',
-        specialty: 'Market Analysis',
-        credibility: 0.7,
-        cost: 3000,
-      },
-      {
-        id: 'exp4',
-        name: 'Mr. David Brown',
-        specialty: 'Performance Metrics',
-        credibility: 0.6,
-        cost: 2000,
-      },
-    ];
+  private async loadScenarioMeta(scenarioId: string): Promise<ScenarioMeta> {
+    const raw = await fs.readFile(path.join(DATA_DIR, 'scenarios.json'), 'utf-8');
+    const parsed = JSON.parse(raw) as { scenarios: Record<string, ScenarioMeta>; defaultScenario: string };
+    const scenario = parsed.scenarios[scenarioId];
+    if (!scenario) {
+      const known = Object.keys(parsed.scenarios).join(', ');
+      throw new Error(`Unknown HR Compensation scenario: "${scenarioId}". Known scenarios: ${known}`);
+    }
+    return scenario;
   }
 
-  private generateAttributes(): Attribute[] {
-    return [
-      {
-        id: 'tech',
-        name: 'Technical Skills',
-        importance: 0,
-        optimalWeight: 0.35,
-      },
-      {
-        id: 'leadership',
-        name: 'Leadership Ability',
-        importance: 0,
-        optimalWeight: 0.25,
-      },
-      {
-        id: 'experience',
-        name: 'Experience (Years)',
-        importance: 0,
-        optimalWeight: 0.20,
-      },
-      {
-        id: 'education',
-        name: 'Education',
-        importance: 0,
-        optimalWeight: 0.10,
-      },
-      {
-        id: 'cultural',
-        name: 'Cultural Fit',
-        importance: 0,
-        optimalWeight: 0.10,
-      },
-    ];
-  }
-
-  private generateCandidates(): Candidate[] {
-    return [
-      {
-        id: 'cand1',
-        name: 'Alice Kumar',
-        scores: {
-          tech: 92,
-          leadership: 85,
-          experience: 78,
-          education: 90,
-          cultural: 88,
-        },
-        optimalRank: 1,
-      },
-      {
-        id: 'cand2',
-        name: 'Bob Martinez',
-        scores: {
-          tech: 88,
-          leadership: 90,
-          experience: 85,
-          education: 82,
-          cultural: 85,
-        },
-        optimalRank: 2,
-      },
-      {
-        id: 'cand3',
-        name: 'Carol Lee',
-        scores: {
-          tech: 85,
-          leadership: 75,
-          experience: 90,
-          education: 88,
-          cultural: 80,
-        },
-        optimalRank: 3,
-      },
-      {
-        id: 'cand4',
-        name: 'Dan Wilson',
-        scores: {
-          tech: 78,
-          leadership: 82,
-          experience: 75,
-          education: 85,
-          cultural: 90,
-        },
-        optimalRank: 4,
-      },
-    ];
+  private async loadContent<T>(fileName: string, setKey: string): Promise<T> {
+    const raw = await fs.readFile(path.join(DATA_DIR, fileName), 'utf-8');
+    const parsed = JSON.parse(raw) as Record<string, T>;
+    const set = parsed[setKey];
+    if (!set) {
+      throw new Error(`Content set "${setKey}" not found in ${fileName}`);
+    }
+    return set;
   }
 
   private calculateRankCorrelation(): number {
     // Spearman's rank correlation coefficient
     const n = this.state.candidateRanking.length;
-    
+
     // Get optimal ranking
     const optimalRanking = this.state.config.candidates
+      .slice()
       .sort((a, b) => a.optimalRank - b.optimalRank)
       .map(c => c.id);
 
@@ -494,8 +452,9 @@ export class HRCompensationEngine extends BaseGameEngine {
   }
 
   private getExpertiseLevel(): string {
-    const percentage = (this.state.finalCompensation / 950000) * 100;
-    
+    const maxFinal = this.state.config.baseSalary + 450000;
+    const percentage = (this.state.finalCompensation / maxFinal) * 100;
+
     if (percentage >= 90) return 'Expert Level ⭐⭐⭐⭐⭐';
     if (percentage >= 80) return 'Advanced ⭐⭐⭐⭐';
     if (percentage >= 70) return 'Proficient ⭐⭐⭐';
@@ -504,13 +463,20 @@ export class HRCompensationEngine extends BaseGameEngine {
   }
 
   private async saveGameState(): Promise<void> {
-    await prisma.gameState.create({
-      data: {
-        session_id: this.sessionId,
-        round_number: 0,
-        state_data: this.state as any,
-      },
-    });
+    // Use sessionStateCache instead of gameState for state persistence
+    // This allows the HR Compensation engine to work without needing the GameState table
+    try {
+      await prisma.sessionStateCache.upsert({
+        where: { session_id: this.sessionId },
+        update: { state_data: this.state as any },
+        create: {
+          session_id: this.sessionId,
+          state_data: this.state as any,
+        },
+      });
+    } catch (error) {
+      // Log but don't fail - state is also kept in memory
+      this.log(`Warning: Could not persist state to DB: ${error}`);
+    }
   }
 }
-

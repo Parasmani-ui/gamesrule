@@ -1,0 +1,80 @@
+{
+  "default": [
+    {
+      "id": "cand1",
+      "name": "Anjali Mehta",
+      "scores": { "tech": 92, "leadership": 85, "experience": 78, "education": 90, "cultural": 88 },
+      "optimalRank": 1
+    },
+    {
+      "id": "cand2",
+      "name": "Rohan Iyer",
+      "scores": { "tech": 88, "leadership": 90, "experience": 85, "education": 82, "cultural": 85 },
+      "optimalRank": 2
+    },
+    {
+      "id": "cand3",
+      "name": "Priya Krishnan",
+      "scores": { "tech": 85, "leadership": 75, "experience": 90, "education": 88, "cultural": 80 },
+      "optimalRank": 3
+    },
+    {
+      "id": "cand4",
+      "name": "Arjun Desai",
+      "scores": { "tech": 78, "leadership": 82, "experience": 75, "education": 85, "cultural": 90 },
+      "optimalRank": 4
+    }
+  ],
+  "tech-startup": [
+    {
+      "id": "ts_cand1",
+      "name": "Karan Bhalla",
+      "scores": { "tech": 85, "leadership": 95, "experience": 70, "education": 80, "cultural": 88 },
+      "optimalRank": 1
+    },
+    {
+      "id": "ts_cand2",
+      "name": "Maya Subramanian",
+      "scores": { "tech": 88, "leadership": 85, "experience": 72, "education": 85, "cultural": 82 },
+      "optimalRank": 2
+    },
+    {
+      "id": "ts_cand3",
+      "name": "Aditya Verma",
+      "scores": { "tech": 95, "leadership": 75, "experience": 65, "education": 88, "cultural": 78 },
+      "optimalRank": 3
+    },
+    {
+      "id": "ts_cand4",
+      "name": "Liu Wei",
+      "scores": { "tech": 80, "leadership": 70, "experience": 60, "education": 90, "cultural": 80 },
+      "optimalRank": 4
+    }
+  ],
+  "manufacturing": [
+    {
+      "id": "mfg_cand1",
+      "name": "Rajesh Khanna",
+      "scores": { "tech": 75, "leadership": 80, "experience": 95, "education": 78, "cultural": 85 },
+      "optimalRank": 1
+    },
+    {
+      "id": "mfg_cand2",
+      "name": "Deepak Iyer",
+      "scores": { "tech": 82, "leadership": 78, "experience": 88, "education": 80, "cultural": 80 },
+      "optimalRank": 2
+    },
+    {
+      "id": "mfg_cand3",
+      "name": "Ravi Ranjan",
+      "scores": { "tech": 80, "leadership": 70, "experience": 80, "education": 85, "cultural": 78 },
+      "optimalRank": 3
+    },
+    {
+      "id": "mfg_cand4",
+      "name": "Linda Foster",
+      "scores": { "tech": 88, "leadership": 75, "experience": 65, "education": 92, "cultural": 82 },
+      "optimalRank": 4
+    }
+  ]
+}

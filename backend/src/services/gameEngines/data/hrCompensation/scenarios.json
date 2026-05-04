@@ -1,0 +1,32 @@
+{
+  "defaultScenario": "default",
+  "scenarios": {
+    "default": {
+      "id": "default",
+      "name": "Default Mid-Market Hire",
+      "description": "Mid-market organisation hiring a senior contributor. Balanced criteria across skills, leadership, experience, education, and culture. 4 experts, 4 candidates.",
+      "baseSalary": 500000,
+      "expertSet": "default",
+      "attributeSet": "default",
+      "candidateSet": "default"
+    },
+    "tech-startup": {
+      "id": "tech-startup",
+      "name": "Tech Startup Leadership Hire",
+      "description": "Series-B startup hiring a senior product/engineering lead. Leadership-weighted criteria emphasising vision, ownership, and adaptability. 5 experts, 4 candidates.",
+      "baseSalary": 700000,
+      "expertSet": "tech-startup",
+      "attributeSet": "tech-startup",
+      "candidateSet": "tech-startup"
+    },
+    "manufacturing": {
+      "id": "manufacturing",
+      "name": "Manufacturing Plant Manager",
+      "description": "Established manufacturing firm hiring a plant operations head. Experience-weighted criteria emphasising operational depth and shop-floor judgement. 4 experts, 4 candidates.",
+      "baseSalary": 550000,
+      "expertSet": "manufacturing",
+      "attributeSet": "manufacturing",
+      "candidateSet": "manufacturing"
+    }
+  }
+}
