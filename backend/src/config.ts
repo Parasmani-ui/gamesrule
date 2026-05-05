@@ -1,4 +1,5 @@
 import dotenv from 'dotenv';
+import type { SignOptions } from 'jsonwebtoken';
 
 dotenv.config();
 
@@ -6,14 +7,14 @@ export const config = {
   // Server
   port: parseInt(process.env.PORT || '4000', 10),
   nodeEnv: process.env.NODE_ENV || 'development',
-  
+
   // Database
   databaseUrl: process.env.DATABASE_URL!,
-  
+
   // JWT
   jwtSecret: process.env.JWT_SECRET || 'dev-secret-change-in-production',
-  jwtExpiresIn: process.env.JWT_EXPIRES_IN || '7d',
-  jwtRefreshExpiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '30d',
+  jwtExpiresIn: (process.env.JWT_EXPIRES_IN || '7d') as SignOptions['expiresIn'],
+  jwtRefreshExpiresIn: (process.env.JWT_REFRESH_EXPIRES_IN || '30d') as SignOptions['expiresIn'],
   
   // Redis
   redisUrl: process.env.REDIS_URL || 'redis://localhost:6379',
