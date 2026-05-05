@@ -460,11 +460,7 @@ describe('HRCompensationEngine', () => {
       expect(result.message).toContain('already complete');
     });
 
-    it('processes out-of-order stage actions without validation (documented gap)', async () => {
-      // The engine has no stage-machine guard: submitting `attribute-weighting`
-      // before `expert-selection` is processed and advances the state.
-      // Documenting this here so a future stage-guard refactor can flip the
-      // assertion. Until then, the front-end must enforce stage order.
+    it('rejects a stage-2 action while currentStage=expert-selection', async () => {
       const result = await engine.applyAction(testParticipantId, {
         stage: 'attribute-weighting',
         data: {
@@ -478,9 +474,74 @@ describe('HRCompensationEngine', () => {
         },
       });
 
-      expect(result.success).toBe(true);
+      expect(result.success).toBe(false);
+      expect(result.message).toContain('Not in attribute-weighting stage');
+      // State must not have advanced
+      expect(engine.getPublicState().currentStage).toBe('expert-selection');
+    });
+
+    it('rejects a stage-3 action while currentStage=expert-selection', async () => {
+      const result = await engine.applyAction(testParticipantId, {
+        stage: 'candidate-ranking',
+        data: { ranking: ['cand1', 'cand2', 'cand3', 'cand4'] },
+      });
+
+      expect(result.success).toBe(false);
+      expect(result.message).toContain('Not in candidate-ranking stage');
       const publicState = engine.getPublicState();
-      expect(publicState.currentStage).toBe('candidate-ranking');
+      expect(publicState.currentStage).toBe('expert-selection');
+      expect(publicState.isComplete).toBe(false);
+    });
+
+    it('rejects a stage-1 action while currentStage=attribute-weighting', async () => {
+      // Advance to stage 2 legitimately
+      await engine.applyAction(testParticipantId, {
+        stage: 'expert-selection',
+        data: { expertIds: ['exp1', 'exp2'] },
+      });
+      expect(engine.getPublicState().currentStage).toBe('attribute-weighting');
+
+      // Now try to re-submit stage 1
+      const result = await engine.applyAction(testParticipantId, {
+        stage: 'expert-selection',
+        data: { expertIds: ['exp3'] },
+      });
+
+      expect(result.success).toBe(false);
+      expect(result.message).toContain('Not in expert-selection stage');
+      // State unchanged
+      expect(engine.getPublicState().currentStage).toBe('attribute-weighting');
+    });
+
+    it('still allows the legitimate forward path 1 -> 2 -> 3', async () => {
+      const stage1 = await engine.applyAction(testParticipantId, {
+        stage: 'expert-selection',
+        data: { expertIds: ['exp1', 'exp2'] },
+      });
+      expect(stage1.success).toBe(true);
+      expect(engine.getPublicState().currentStage).toBe('attribute-weighting');
+
+      const stage2 = await engine.applyAction(testParticipantId, {
+        stage: 'attribute-weighting',
+        data: {
+          weights: {
+            tech: 0.35,
+            leadership: 0.25,
+            experience: 0.20,
+            education: 0.10,
+            cultural: 0.10,
+          },
+        },
+      });
+      expect(stage2.success).toBe(true);
+      expect(engine.getPublicState().currentStage).toBe('candidate-ranking');
+
+      const stage3 = await engine.applyAction(testParticipantId, {
+        stage: 'candidate-ranking',
+        data: { ranking: ['cand1', 'cand2', 'cand3', 'cand4'] },
+      });
+      expect(stage3.success).toBe(true);
+      expect(stage3.data?.isComplete).toBe(true);
     });
   });
 

@@ -190,6 +190,13 @@ export class HRCompensationEngine extends BaseGameEngine {
   }
 
   private async handleExpertSelection(data: any): Promise<ActionResult> {
+    if (this.state.currentStage !== 'expert-selection') {
+      return {
+        success: false,
+        message: `Not in expert-selection stage (current: ${this.state.currentStage})`,
+      };
+    }
+
     const { expertIds } = data;
 
     if (!Array.isArray(expertIds) || expertIds.length === 0) {
@@ -223,6 +230,13 @@ export class HRCompensationEngine extends BaseGameEngine {
   }
 
   private async handleAttributeWeighting(data: any): Promise<ActionResult> {
+    if (this.state.currentStage !== 'attribute-weighting') {
+      return {
+        success: false,
+        message: `Not in attribute-weighting stage (current: ${this.state.currentStage})`,
+      };
+    }
+
     const { weights } = data;
 
     if (!weights || typeof weights !== 'object') {
@@ -269,6 +283,13 @@ export class HRCompensationEngine extends BaseGameEngine {
   }
 
   private async handleCandidateRanking(data: any): Promise<ActionResult> {
+    if (this.state.currentStage !== 'candidate-ranking') {
+      return {
+        success: false,
+        message: `Not in candidate-ranking stage (current: ${this.state.currentStage})`,
+      };
+    }
+
     const { ranking } = data;
 
     if (!Array.isArray(ranking) || ranking.length !== this.state.config.candidates.length) {
@@ -327,7 +348,9 @@ export class HRCompensationEngine extends BaseGameEngine {
    * The session's `max_rounds` (typically 1) is informational: enforcement
    * lives at the session/facilitator layer, not in the engine. Stage gating
    * (`isComplete` and the `currentStage` machine) is what actually prevents
-   * extra actions after completion.
+   * extra actions after completion. Each stage handler additionally guards
+   * `state.currentStage` so out-of-order socket actions are rejected
+   * deterministically.
    */
   async advanceRound(): Promise<RoundResult> {
     return {
