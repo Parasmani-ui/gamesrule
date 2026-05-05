@@ -44,3 +44,6 @@ backend/prisma/migrations/*_dev/
 .turbo/
 .vercel/
 .cache/
+md_files
+files
+audits

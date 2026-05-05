@@ -180,6 +180,18 @@ model SessionStateCache {
   @@map("session_state_cache")
 }
 
+// Game state snapshots for all simulations
+model GameState {
+  id           String   @id @default(uuid())
+  session_id   String
+  round_number Int
+  state_data   Json     // Complete game state snapshot
+  created_at   DateTime @default(now())
+
+  @@index([session_id, round_number])
+  @@map("game_states")
+}
+
 // ============================================
 // FRUIT BEER GAME SPECIFIC TABLES (Optional)
 // ============================================
