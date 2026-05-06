@@ -165,8 +165,8 @@ describe('FruitBeerEngine', () => {
 
     it('should calculate costs correctly', async () => {
       const result = await engine.advanceRound();
-      
-      const participantResults = result.participantResults;
+
+      const participantResults = result.participantResults!;
       expect(participantResults.size).toBeGreaterThan(0);
 
       // Each participant should have cost calculated
@@ -211,9 +211,91 @@ describe('FruitBeerEngine', () => {
 
     it('should have costs for all players', async () => {
       const metrics = await engine.computeMetrics();
-      
+
       expect(metrics.totalCosts.RETAILER).toBeGreaterThanOrEqual(0);
       expect(metrics.totalCosts.WHOLESALER).toBeGreaterThanOrEqual(0);
+    });
+
+    it('should return per-role bullwhip ratios, not a single number', async () => {
+      const metrics = await engine.computeMetrics();
+
+      // Bullwhip is a record keyed by role, populated for each player in the session
+      expect(typeof metrics.bullwhipEffect).toBe('object');
+      expect(metrics.bullwhipEffect).toHaveProperty('RETAILER');
+      expect(metrics.bullwhipEffect).toHaveProperty('WHOLESALER');
+      expect(typeof metrics.bullwhipEffect.RETAILER).toBe('number');
+      expect(metrics.bullwhipEffect.RETAILER).toBeGreaterThanOrEqual(0);
+    });
+
+    it('should report 1.0 bullwhip ratio when demand is constant', async () => {
+      // Constant demand → demand variance is 0, ratios should fall back to 1.0
+      const flatEngine = new FruitBeerEngine('flat-session');
+      (prisma.sessionParticipant.findMany as jest.Mock).mockResolvedValue([
+        { id: 'r', role: 'RETAILER', joined_at: new Date() },
+      ]);
+      await flatEngine.initialize({
+        leadTime: 2,
+        initialInventory: 12,
+        holdingCost: 0.5,
+        stockoutCost: 1.0,
+        numWeeks: 4,
+        demandPattern: [4, 4, 4, 4],
+      });
+      await flatEngine.advanceRound();
+      await flatEngine.advanceRound();
+      const flatMetrics = await flatEngine.computeMetrics();
+      expect(flatMetrics.bullwhipEffect.RETAILER).toBeCloseTo(1.0);
+    });
+  });
+
+  describe('weekly stats recording', () => {
+    it('should populate demand/received/shipped on weeklyStats (not zero)', async () => {
+      const mockParticipants = [
+        { id: 'p1', role: 'RETAILER', joined_at: new Date() },
+        { id: 'p2', role: 'WHOLESALER', joined_at: new Date() },
+        { id: 'p3', role: 'DISTRIBUTOR', joined_at: new Date() },
+        { id: 'p4', role: 'MANUFACTURER', joined_at: new Date() },
+      ];
+
+      (prisma.sessionParticipant.findMany as jest.Mock).mockResolvedValue(mockParticipants);
+      (prisma.fruitBeerGameState.create as jest.Mock).mockResolvedValue({});
+      (prisma.gameSession.update as jest.Mock).mockResolvedValue({});
+      (prisma.playerDecision.create as jest.Mock).mockResolvedValue({});
+
+      const e = new FruitBeerEngine('stats-session');
+      await e.initialize({
+        leadTime: 2,
+        initialInventory: 12,
+        holdingCost: 0.5,
+        stockoutCost: 1.0,
+        numWeeks: 6,
+        demandPattern: [4, 4, 4, 8, 8, 8],
+      });
+
+      // Run a few rounds so the supply chain has shipments and orders flowing
+      for (let i = 0; i < 5; i++) {
+        await e.applyAction('p1', { orderQuantity: 4 });
+        await e.applyAction('p2', { orderQuantity: 4 });
+        await e.applyAction('p3', { orderQuantity: 4 });
+        await e.applyAction('p4', { orderQuantity: 4 });
+        await e.advanceRound();
+      }
+
+      const retailerState = e.getParticipantState('p1');
+      const wholesalerState = e.getParticipantState('p2');
+
+      // Retailer always sees customer demand
+      expect(retailerState.weeklyStats[0].demand).toBe(4);
+      // Retailer should have received shipments by week 3 (after lead time)
+      const retailerReceivedAny = retailerState.weeklyStats.some((w: any) => w.shipped > 0);
+      expect(retailerReceivedAny).toBe(true);
+
+      // Wholesaler must see real downstream demand at some point — the bug
+      // would have left demand=0 across the entire history
+      const wholesalerSawDemand = wholesalerState.weeklyStats.some((w: any) => w.demand > 0);
+      expect(wholesalerSawDemand).toBe(true);
+      const wholesalerShippedSomething = wholesalerState.weeklyStats.some((w: any) => w.shipped > 0);
+      expect(wholesalerShippedSomething).toBe(true);
     });
   });
 

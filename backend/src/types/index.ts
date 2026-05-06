@@ -57,7 +57,7 @@ export interface SocketActionPayload {
 export interface FruitBeerConfig {
   leadTime: number;
   initialInventory: number;
-  initialBackorder: number;
+  initialBackorder?: number;
   holdingCost: number;
   stockoutCost: number;
   numWeeks: number;

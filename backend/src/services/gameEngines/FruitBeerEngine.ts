@@ -19,6 +19,13 @@ import { prisma } from '../../db';
 export class FruitBeerEngine extends BaseGameEngine {
   private state!: FruitBeerGameState;
   private pendingOrders: Map<string, number> = new Map();
+  // Per-week capture buffers, populated during the receive/process steps and
+  // drained in recordWeeklyStats. Without these, the corresponding fields on
+  // weeklyStats are zero because the source pipeline values get shifted away
+  // before recordWeeklyStats runs.
+  private weekReceived: Map<string, number> = new Map();
+  private weekDemand: Map<string, number> = new Map();
+  private weekShipped: Map<string, number> = new Map();
   private readonly ROLES = ['RETAILER', 'WHOLESALER', 'DISTRIBUTOR', 'MANUFACTURER'];
 
   constructor(sessionId: string) {
@@ -58,8 +65,11 @@ export class FruitBeerEngine extends BaseGameEngine {
       });
     }
 
-    // Generate customer demand pattern if not provided
+    // Generate customer demand pattern if not provided. Persist the generated
+    // pattern back onto config so getPublicState surfaces it (the frontend
+    // shows planned demand on the supply-chain view).
     const customerDemand = config.demandPattern || this.generateDemandPattern(config.numWeeks || 20);
+    config.demandPattern = customerDemand;
 
     this.state = {
       sessionId: this.sessionId,
@@ -199,10 +209,18 @@ export class FruitBeerEngine extends BaseGameEngine {
 
     for (const [_, playerState] of this.state.players) {
       metrics.totalCosts[playerState.role] = playerState.totalCost;
-      
-      // Calculate inventory variance
+
+      // Inventory variance over the played weeks
       const inventories = playerState.weeklyStats.map(w => w.inventory);
       metrics.inventoryVariance[playerState.role] = this.variance(inventories);
+
+      // Service level = total shipped / total demanded across all played weeks.
+      // Returns 100 when no demand has materialised yet (avoids 0/0 = NaN).
+      const totalDemand = playerState.weeklyStats.reduce((sum, w) => sum + w.demand, 0);
+      const totalShipped = playerState.weeklyStats.reduce((sum, w) => sum + w.shipped, 0);
+      metrics.serviceLevel[playerState.role] = totalDemand > 0
+        ? (totalShipped / totalDemand) * 100
+        : 100;
     }
 
     return metrics;
@@ -242,10 +260,12 @@ export class FruitBeerEngine extends BaseGameEngine {
   // ============================================
 
   private receiveShipments(): void {
+    this.weekReceived.clear();
     for (const [_, playerState] of this.state.players) {
       // Receive shipment from pipeline (first element = arrives this week)
       const shipment = playerState.incomingShipments.shift() || 0;
       playerState.inventory += shipment;
+      this.weekReceived.set(playerState.role, shipment);
       const role = playerState.role;
       if (shipment > 0) {
         this.log(`${role}: Received ${shipment} units from upstream, New inventory = ${playerState.inventory}`);
@@ -254,8 +274,10 @@ export class FruitBeerEngine extends BaseGameEngine {
   }
 
   private processOrders(): void {
+    this.weekDemand.clear();
+    this.weekShipped.clear();
     const roles = this.ROLES;
-    
+
     // Process from RETAILER (downstream) to MANUFACTURER (upstream)
     for (let i = 0; i < roles.length; i++) {
       const role = roles[i];
@@ -268,8 +290,8 @@ export class FruitBeerEngine extends BaseGameEngine {
         // Customer demand (external)
         // Week 1 uses customerDemand[0], Week 2 uses customerDemand[1], etc.
         const demandIndex = this.state.currentWeek - 1;
-        demand = (demandIndex >= 0 && demandIndex < this.state.customerDemand.length) 
-          ? this.state.customerDemand[demandIndex] 
+        demand = (demandIndex >= 0 && demandIndex < this.state.customerDemand.length)
+          ? this.state.customerDemand[demandIndex]
           : 4;
         this.log(`RETAILER: Customer demand = ${demand} (week ${this.state.currentWeek}, index ${demandIndex})`);
       } else {
@@ -282,6 +304,9 @@ export class FruitBeerEngine extends BaseGameEngine {
         this.log(`${role}: Received order from downstream = ${demand} (pipeline after shift: [${player.incomingOrders.join(', ')}])`);
       }
 
+      // Capture pre-fulfilment demand for the weekly stats record
+      this.weekDemand.set(role, demand);
+
       // Add to existing backorder
       const totalDemand = demand + player.backorder;
       this.log(`${role}: Total demand (order + backorder) = ${totalDemand} (backorder: ${player.backorder})`);
@@ -290,7 +315,9 @@ export class FruitBeerEngine extends BaseGameEngine {
       const fulfilled = Math.min(totalDemand, player.inventory);
       player.inventory -= fulfilled;
       player.backorder = totalDemand - fulfilled;
-      
+
+      this.weekShipped.set(role, fulfilled);
+
       this.log(`${role}: Fulfilled ${fulfilled}, New inventory = ${player.inventory}, New backorder = ${player.backorder}`);
 
       // Ship fulfilled quantity to downstream player
@@ -388,14 +415,12 @@ export class FruitBeerEngine extends BaseGameEngine {
 
   private recordWeeklyStats(): void {
     for (const [_, playerState] of this.state.players) {
-      const demand = this.getCurrentDemand(playerState.role);
-      const received = playerState.incomingShipments[0] || 0;
-      
+      const role = playerState.role;
       playerState.weeklyStats.push({
         week: this.state.currentWeek,
-        demand,
-        received,
-        shipped: 0, // TODO: Track actual shipments
+        demand: this.weekDemand.get(role) ?? 0,
+        received: this.weekReceived.get(role) ?? 0,
+        shipped: this.weekShipped.get(role) ?? 0,
         orderPlaced: playerState.lastOrderPlaced,
         inventory: playerState.inventory,
         backorder: playerState.backorder,
@@ -468,13 +493,6 @@ export class FruitBeerEngine extends BaseGameEngine {
     return results;
   }
 
-  private getCurrentDemand(role: string): number {
-    if (role === 'RETAILER') {
-      return this.state.customerDemand[this.state.currentWeek - 1] || 4;
-    }
-    return 0; // Simplified
-  }
-
   private getPlayerByRole(role: string): FruitBeerPlayerState | undefined {
     for (const [_, playerState] of this.state.players) {
       if (playerState.role === role) {
@@ -502,10 +520,27 @@ export class FruitBeerEngine extends BaseGameEngine {
     return pattern;
   }
 
-  private calculateBullwhipEffect(): number {
-    // Bullwhip = Variance of orders / Variance of demand
-    // Simplified calculation
-    return 1.0; // TODO: Implement proper calculation
+  private calculateBullwhipEffect(): { [role: string]: number } {
+    // Per-role bullwhip ratio = σ²(orders placed by role) / σ²(customer demand)
+    // observed so far. The classic teaching outcome is that the ratio grows
+    // monotonically as you walk upstream from RETAILER to MANUFACTURER.
+    const weeksPlayed = this.state.currentWeek;
+    const observedDemand = this.state.customerDemand.slice(0, weeksPlayed);
+    const demandVariance = this.variance(observedDemand);
+
+    const result: { [role: string]: number } = {};
+    for (const role of this.ROLES) {
+      const player = this.getPlayerByRole(role);
+      if (!player) continue;
+      const orderHistory = player.weeklyStats.map(w => w.orderPlaced);
+      // Demand variance of zero means a perfectly flat customer demand. With
+      // no baseline variability there is nothing to amplify, so the canonical
+      // bullwhip ratio is undefined. Report 1.0 to match "no amplification".
+      result[role] = demandVariance > 0
+        ? this.variance(orderHistory) / demandVariance
+        : 1.0;
+    }
+    return result;
   }
 
   private variance(values: number[]): number {
