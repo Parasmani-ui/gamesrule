@@ -206,7 +206,7 @@ non-bot participants submit, with a `facilitator_advance_round` manual override.
 | 6 | Order Ops | `order-ops` | 501 | ❌ | Built, likely duration/phase drift |
 | 7 | Dual Source Dilemma | `dual-source-dilemma` | 477 | ❌ | Built, generic vs Surat/Bangladesh framing |
 | 8 | Demand Forecast Challenge | `demand-forecast-challenge` | 412 | ❌ | Built, **no spec exists** (see §11) |
-| 9 | Customer In A Store | `customer-in-store` | 364 | ❌ | Built |
+| 9 | Customer In A Store | `customer-in-store` | 636 | ✅ | **Phase 1 complete** — engine + UI shipped 2026-05-07; intervention modes made real, integrity gates added, question generator de-degenerated |
 | 10 | Onion Dilemma | `onion-dilemma` | 135 | ❌ | **Skeleton** |
 | 11 | TOC Factory | `toc-factory` | 124 | ❌ | **Skeleton** |
 

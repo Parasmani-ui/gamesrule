@@ -162,22 +162,22 @@
   {
     "id": 9,
     "slug": "customer-in-store",
-    "name": "Customer In A Store - Cognitive Bias",
-    "type": "cognitive-science",
-    "author": "Prof. Raghunathan, IIM Ahmedabad",
-    "description": "Stock-flow reasoning simulation. Interpret inflow/outflow graphs, calculate stock levels, and overcome correlation heuristic bias. Track your learning improvement across variations.",
-    "duration_minutes": 25,
+    "name": "Customer In A Store",
+    "type": "operations-management",
+    "author": "Prof. T. T. Niranjan, IIT Bombay",
+    "description": "A Supply Chain Management Simulation. Interpret inflow/outflow graphs, reason about stock-flow dynamics, and overcome the correlation heuristic. Three research-grade learning interventions: learning-by-doing, task decomposition, and binary feedback.",
+    "duration_minutes": 20,
     "difficulty_level": "beginner",
     "learning_objectives": [
-      "Understand stock-flow relationships",
-      "Detect cognitive biases",
-      "Improve systems thinking",
-      "Learn through adaptive feedback"
+      "Distinguish stocks (accumulations) from flows (rates)",
+      "Recognise and overcome the correlation heuristic",
+      "Interpret time-series graphs correctly",
+      "Apply integration/accumulation reasoning to operations problems"
     ],
     "max_players": 1,
     "min_players": 1,
     "supports_bots": false,
-    "tags": ["cognitive-science", "systems-thinking", "bias", "single-player"]
+    "tags": ["systems-thinking", "stock-flow", "single-player", "behavioral-decision"]
   },
   {
     "id": 10,
