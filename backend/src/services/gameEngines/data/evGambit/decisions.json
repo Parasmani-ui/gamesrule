@@ -1,0 +1,318 @@
+{
+  "default": {
+    "event-1-government-push": [
+      {
+        "category": "Business Strategy",
+        "decisions": [
+          {
+            "id": "scale-up-existing",
+            "type": "business",
+            "name": "Scale up operations of existing product",
+            "cost": 20000000,
+            "expectedImpact": { "marketShare": 1.5, "production": 8 },
+            "roundModifiers": { "1": 1.1 }
+          },
+          {
+            "id": "launch-new-two-wheeler",
+            "type": "business",
+            "name": "Announce the launch of a new two-wheeler",
+            "cost": 30000000,
+            "expectedImpact": { "marketShare": 2.5, "brandValue": 5, "technology": 3 },
+            "roundModifiers": { "1": 1.0 }
+          }
+        ]
+      },
+      {
+        "category": "Operations Strategy",
+        "decisions": [
+          {
+            "id": "preorder-batteries-lion",
+            "type": "operations",
+            "name": "Pre-order batteries and store in inventory from LiOn",
+            "cost": 15000000,
+            "expectedImpact": { "production": 5, "supplierPower": -5 },
+            "roundModifiers": { "1": 1.0 }
+          },
+          {
+            "id": "open-more-stores",
+            "type": "operations",
+            "name": "Open more stores in the country",
+            "cost": 20000000,
+            "expectedImpact": { "marketShare": 1.5, "production": 3 },
+            "roundModifiers": { "1": 1.0 }
+          }
+        ]
+      },
+      {
+        "category": "Corporate Strategy",
+        "decisions": [
+          {
+            "id": "partner-smartride",
+            "type": "corporate",
+            "name": "Partner with SmartRide",
+            "cost": 15000000,
+            "expectedImpact": { "marketShare": 1.0, "substituteThreat": -8, "buyerPower": -5 },
+            "roundModifiers": { "1": 1.1 }
+          },
+          {
+            "id": "tesla-jv-outreach",
+            "type": "corporate",
+            "name": "Reach out to Tesla for a possible JV",
+            "cost": 20000000,
+            "expectedImpact": { "technology": 10, "brandValue": 5, "newEntrants": -8 },
+            "roundModifiers": { "1": 0.7 }
+          }
+        ]
+      }
+    ],
+    "event-2-import-ban": [
+      {
+        "category": "Business Strategy",
+        "decisions": [
+          {
+            "id": "increase-rusloth-sourcing",
+            "type": "business",
+            "name": "Increase sourcing from Rusloth",
+            "cost": 10000000,
+            "expectedImpact": { "supplierPower": -8, "production": 2 },
+            "roundModifiers": { "2": 1.0 }
+          },
+          {
+            "id": "coalition-with-electrify",
+            "type": "business",
+            "name": "Create a coalition with Electrify to negotiate with governments of India and China",
+            "cost": 25000000,
+            "expectedImpact": { "supplierPower": -10, "rivalry": -5 },
+            "roundModifiers": { "2": 0.9 }
+          }
+        ]
+      },
+      {
+        "category": "Operations Strategy",
+        "decisions": [
+          {
+            "id": "expedite-india-lithium",
+            "type": "operations",
+            "name": "Expedite mining of Indian Lithium",
+            "cost": 35000000,
+            "expectedImpact": { "supplierPower": -15, "technology": 3 },
+            "effects": ["expedite-india-mines"],
+            "roundModifiers": { "2": 1.2 }
+          },
+          {
+            "id": "decrease-four-wheelers",
+            "type": "operations",
+            "name": "Decrease production of four wheelers",
+            "cost": 0,
+            "expectedImpact": { "marketShare": -1.0, "production": -5 },
+            "roundModifiers": { "2": 0.7 }
+          },
+          {
+            "id": "increase-stake-india-mines",
+            "type": "operations",
+            "name": "Increase your stake in India Mines",
+            "cost": 50000000,
+            "expectedImpact": { "supplierPower": -12, "production": 4 },
+            "effects": ["expedite-india-mines"],
+            "roundModifiers": { "2": 1.1 }
+          }
+        ]
+      },
+      {
+        "category": "Corporate Strategy",
+        "decisions": [
+          {
+            "id": "shut-down-retail",
+            "type": "corporate",
+            "name": "Shut down retail stores",
+            "cost": -5000000,
+            "expectedImpact": { "marketShare": -1.5, "production": -3 },
+            "roundModifiers": { "2": 0.6 }
+          },
+          {
+            "id": "reduce-exports",
+            "type": "corporate",
+            "name": "Reduce exports till standoff ends",
+            "cost": 0,
+            "expectedImpact": { "marketShare": -0.5 },
+            "roundModifiers": { "2": 0.8 }
+          }
+        ]
+      }
+    ],
+    "event-3-buyer-acquisition": [
+      {
+        "category": "Business Strategy",
+        "decisions": [
+          {
+            "id": "explore-exports",
+            "type": "business",
+            "name": "Explore opportunities to export",
+            "cost": 10000000,
+            "expectedImpact": { "marketShare": 1.5, "buyerPower": -5 },
+            "roundModifiers": { "3": 1.1 }
+          },
+          {
+            "id": "settle-lower-prices-rexa",
+            "type": "business",
+            "name": "Settle for lower prices from Rexa",
+            "cost": 0,
+            "expectedImpact": { "marketShare": 0.5, "buyerPower": 8, "cash": -5000000 },
+            "roundModifiers": { "3": 0.7 }
+          }
+        ]
+      },
+      {
+        "category": "Sales Strategy",
+        "decisions": [
+          {
+            "id": "scout-new-clients",
+            "type": "sales",
+            "name": "Scout for more domestic and international clients",
+            "cost": 15000000,
+            "expectedImpact": { "marketShare": 2.0, "buyerPower": -8 },
+            "roundModifiers": { "3": 1.2 }
+          },
+          {
+            "id": "discount-non-bestsellers",
+            "type": "sales",
+            "name": "Offer discounts on non-best-selling products",
+            "cost": 5000000,
+            "expectedImpact": { "marketShare": 1.0, "cash": -2000000 },
+            "roundModifiers": { "3": 0.9 }
+          }
+        ]
+      },
+      {
+        "category": "Corporate Strategy",
+        "decisions": [
+          {
+            "id": "reduce-shuttles-buses",
+            "type": "corporate",
+            "name": "Reduce production of shuttles and buses",
+            "cost": 0,
+            "expectedImpact": { "marketShare": -1.5, "production": -8 },
+            "roundModifiers": { "3": 0.6 }
+          },
+          {
+            "id": "increase-shuttles-buses",
+            "type": "corporate",
+            "name": "Increase production of shuttles and buses",
+            "cost": 25000000,
+            "expectedImpact": { "marketShare": 2.0, "production": 10 },
+            "roundModifiers": { "3": 1.0 }
+          }
+        ]
+      }
+    ],
+    "event-4-emission-norms": [
+      {
+        "category": "Marketing Strategy",
+        "decisions": [
+          {
+            "id": "campaign-malign-electrify",
+            "type": "marketing",
+            "name": "Create a marketing campaign maligning their actions",
+            "cost": 10000000,
+            "expectedImpact": { "brandValue": -2, "marketShare": 0.5, "rivalry": 3 },
+            "roundModifiers": { "4": 0.8 }
+          },
+          {
+            "id": "campaign-best-ev",
+            "type": "marketing",
+            "name": "Launch a marketing campaign for EVans' best selling EV",
+            "cost": 15000000,
+            "expectedImpact": { "brandValue": 6, "marketShare": 2.0 },
+            "roundModifiers": { "4": 1.2 }
+          }
+        ]
+      },
+      {
+        "category": "Sales Strategy",
+        "decisions": [
+          {
+            "id": "increase-sales-channels",
+            "type": "sales",
+            "name": "Increase sales channels to sell EVans' highest selling EVs",
+            "cost": 18000000,
+            "expectedImpact": { "marketShare": 2.5, "production": 3 },
+            "roundModifiers": { "4": 1.1 }
+          },
+          {
+            "id": "discount-financing",
+            "type": "sales",
+            "name": "Offer discounts and financing schemes for EVans EVs",
+            "cost": 12000000,
+            "expectedImpact": { "marketShare": 2.0, "brandValue": 1, "cash": -3000000 },
+            "roundModifiers": { "4": 1.0 }
+          }
+        ]
+      },
+      {
+        "category": "Corporate Strategy",
+        "decisions": [
+          {
+            "id": "ev-research-centre",
+            "type": "corporate",
+            "name": "Set up an EV research centre for future of transportation at a premier university",
+            "cost": 30000000,
+            "expectedImpact": { "technology": 8, "brandValue": 6, "marketShare": 1.0 },
+            "roundModifiers": { "4": 1.1 }
+          },
+          {
+            "id": "report-esg-numbers",
+            "type": "corporate",
+            "name": "Report EVans' Carbon Footprint and ESG numbers",
+            "cost": 5000000,
+            "expectedImpact": { "brandValue": 5, "marketShare": 0.5 },
+            "roundModifiers": { "4": 1.0 }
+          }
+        ]
+      }
+    ],
+    "event-5-tesla-coming": [
+      {
+        "category": "Business Strategy",
+        "decisions": [
+          {
+            "id": "scale-loyal-customer-base",
+            "type": "business",
+            "name": "EVans should increase production to pre-emptively increase loyal customer base",
+            "cost": 25000000,
+            "expectedImpact": { "marketShare": 2.0, "production": 10, "newEntrants": -5 },
+            "roundModifiers": { "5": 1.1 }
+          },
+          {
+            "id": "launch-premium-range",
+            "type": "business",
+            "name": "Launch a range of premium offerings",
+            "cost": 40000000,
+            "expectedImpact": { "marketShare": 1.0, "brandValue": 8, "technology": 5, "newEntrants": -8 },
+            "roundModifiers": { "5": 1.3 }
+          }
+        ]
+      },
+      {
+        "category": "Corporate Strategy",
+        "decisions": [
+          {
+            "id": "electrify-jv",
+            "type": "corporate",
+            "name": "Offer a partnership to Electrify for a JV",
+            "cost": 30000000,
+            "expectedImpact": { "rivalry": -10, "technology": 5, "marketShare": 1.0, "newEntrants": -5 },
+            "roundModifiers": { "5": 1.0 }
+          },
+          {
+            "id": "negotiate-tariffs",
+            "type": "corporate",
+            "name": "Ask the government to negotiate with governments to lower tariffs so EVans can export more",
+            "cost": 10000000,
+            "expectedImpact": { "marketShare": 1.5, "cash": 5000000 },
+            "roundModifiers": { "5": 0.8 }
+          }
+        ]
+      }
+    ]
+  }
+}

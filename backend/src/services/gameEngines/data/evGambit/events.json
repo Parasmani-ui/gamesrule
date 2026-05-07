@@ -1,0 +1,64 @@
+{
+  "default": [
+    {
+      "id": "event-1-government-push",
+      "round": 1,
+      "title": "Government Push",
+      "description": "The federal government has announced tax subsidies for EV manufacturers worth INR 100 cr in order to promote sustainability in the mobility industry. EVans and other manufacturers will benefit from this scheme.",
+      "primaryForce": "buyers",
+      "forceDeltas": {
+        "buyers": -10
+      },
+      "stateChanges": {}
+    },
+    {
+      "id": "event-2-import-ban",
+      "round": 2,
+      "title": "Import Ban",
+      "description": "The relations with China have strained due to geopolitical tensions. Govt. of India has decided to impose a ban on all Chinese products, which means the batteries will not be available for Indian EV makers.",
+      "primaryForce": "suppliers",
+      "forceDeltas": {
+        "suppliers": 20
+      },
+      "stateChanges": {
+        "importBan": true
+      }
+    },
+    {
+      "id": "event-3-buyer-acquisition",
+      "round": 3,
+      "title": "Buyer Acquisition",
+      "description": "Rexa has acquired Ushuttle. Your biggest buyer has gone on to acquire your second-biggest buyer. This changes the market dynamics.",
+      "primaryForce": "buyers",
+      "forceDeltas": {
+        "buyers": 20
+      },
+      "stateChanges": {
+        "rexaAcquisition": true
+      }
+    },
+    {
+      "id": "event-4-emission-norms",
+      "round": 4,
+      "title": "Emission Norms",
+      "description": "Electrify's highest selling petrol vehicle is under scrutiny for supposedly flouting emission norms. Ministry of Transport has taken cognizance of this due to some adverse newspaper reports and testing is underway. Is this a business opportunity for EVans?",
+      "primaryForce": "rivalry",
+      "forceDeltas": {
+        "rivalry": -8
+      },
+      "stateChanges": {}
+    },
+    {
+      "id": "event-5-tesla-coming",
+      "round": 5,
+      "title": "Tesla Coming",
+      "description": "Elon Musk has announced setting up a manufacturing plant for EV cars in India. It is expected that their cars will be sold at a premium.",
+      "primaryForce": "newEntrants",
+      "forceDeltas": {
+        "newEntrants": 18,
+        "rivalry": 10
+      },
+      "stateChanges": {}
+    }
+  ]
+}

@@ -1,0 +1,234 @@
+{
+  "default": {
+    "event-1-government-push": [
+      {
+        "id": "e1q1",
+        "question": "How might the subsidy indirectly strengthen LiOn's bargaining power over EVans?",
+        "options": [
+          { "id": "a", "label": "By increasing EVans' production costs" },
+          { "id": "b", "label": "By raising demand for batteries, giving LiOn pricing leverage" },
+          { "id": "c", "label": "By reducing Electrify Inc.'s market share" },
+          { "id": "d", "label": "By forcing EVans to rely solely on Rusloth" }
+        ],
+        "correctAnswerId": "b"
+      },
+      {
+        "id": "e1q2",
+        "question": "If Electrify Inc. matches EVans' production scale-up, what is the most likely impact on EVans?",
+        "options": [
+          { "id": "a", "label": "EVans' market share gains would be halved" },
+          { "id": "b", "label": "EVans' profit margin would increase" },
+          { "id": "c", "label": "SmartRide would lose customers" },
+          { "id": "d", "label": "LiOn would lower battery prices" }
+        ],
+        "correctAnswerId": "a"
+      },
+      {
+        "id": "e1q3",
+        "question": "Why does a marketing campaign have a stronger effect on SmartRide than discounts?",
+        "options": [
+          { "id": "a", "label": "It reduces production costs" },
+          { "id": "b", "label": "It builds long-term EV adoption over short-term sales" },
+          { "id": "c", "label": "It directly competes with Electrify Inc." },
+          { "id": "d", "label": "It increases supplier dependence" }
+        ],
+        "correctAnswerId": "b"
+      },
+      {
+        "id": "e1q4",
+        "question": "What risk does \"Do Nothing\" in Operations pose in this event?",
+        "options": [
+          { "id": "a", "label": "Losing supplier contracts" },
+          { "id": "b", "label": "Missing a chance to outpace competitors in a growing market" },
+          { "id": "c", "label": "Reducing buyer confidence" },
+          { "id": "d", "label": "Increasing production costs" }
+        ],
+        "correctAnswerId": "b"
+      }
+    ],
+    "event-2-import-ban": [
+      {
+        "id": "e2q1",
+        "question": "Why might shifting to 70% Rusloth sourcing not fully mitigate the tariff's impact?",
+        "options": [
+          { "id": "a", "label": "Rusloth's prices are also affected by tariffs" },
+          { "id": "b", "label": "Rusloth has limited capacity compared to LiOn" },
+          { "id": "c", "label": "Electrify Inc. will retaliate with price cuts" },
+          { "id": "d", "label": "Rexa will demand more vehicles" }
+        ],
+        "correctAnswerId": "b"
+      },
+      {
+        "id": "e2q2",
+        "question": "How does expediting India Mines give EVans an edge over Electrify Inc.?",
+        "options": [
+          { "id": "a", "label": "It immediately increases market share" },
+          { "id": "b", "label": "It reduces long-term dependence on LiOn, unlike Electrify" },
+          { "id": "c", "label": "It lowers production costs this year" },
+          { "id": "d", "label": "It attracts new buyers like SmartRide" }
+        ],
+        "correctAnswerId": "b"
+      },
+      {
+        "id": "e2q3",
+        "question": "Under what condition might reducing exports backfire?",
+        "options": [
+          { "id": "a", "label": "If domestic demand drops due to SmartRide's growth" },
+          { "id": "b", "label": "If LiOn lowers prices again" },
+          { "id": "c", "label": "If Tesla enters earlier than expected" },
+          { "id": "d", "label": "If Rusloth increases supply" }
+        ],
+        "correctAnswerId": "a"
+      },
+      {
+        "id": "e2q4",
+        "question": "What external factor makes \"Do Nothing\" riskier here?",
+        "options": [
+          { "id": "a", "label": "A global lithium shortage increasing battery costs" },
+          { "id": "b", "label": "EVans' profit margin would increase" },
+          { "id": "c", "label": "SmartRide would lose customers" },
+          { "id": "d", "label": "LiOn would lower battery prices" }
+        ],
+        "correctAnswerId": "a"
+      }
+    ],
+    "event-3-buyer-acquisition": [
+      {
+        "id": "e3q1",
+        "question": "Why might stockpiling batteries fail to counter Rexa's increased buyer power?",
+        "options": [
+          { "id": "a", "label": "It doesn't address Rexa's ability to demand lower prices" },
+          { "id": "b", "label": "It increases EVans' production costs" },
+          { "id": "c", "label": "It reduces supply to other buyers" },
+          { "id": "d", "label": "It weakens EVans' position against Electrify Inc." }
+        ],
+        "correctAnswerId": "a"
+      },
+      {
+        "id": "e3q2",
+        "question": "What risk does reducing four-wheeler production pose if Rexa demands more four-wheelers?",
+        "options": [
+          { "id": "a", "label": "EVans could lose market share to SmartRide" },
+          { "id": "b", "label": "EVans might fail to meet Rexa's needs, losing sales" },
+          { "id": "c", "label": "Profit margins would drop further" },
+          { "id": "d", "label": "LiOn would raise battery prices" }
+        ],
+        "correctAnswerId": "b"
+      },
+      {
+        "id": "e3q3",
+        "question": "What could undermine targeting logistics firms as a strategy?",
+        "options": [
+          { "id": "a", "label": "Electrify Inc. offering cheaper EVs to logistics firms" },
+          { "id": "b", "label": "Tesla entering the logistics market" },
+          { "id": "c", "label": "Rusloth reducing battery supply" },
+          { "id": "d", "label": "SmartRide lowering ride-sharing rates" }
+        ],
+        "correctAnswerId": "a"
+      },
+      {
+        "id": "e3q4",
+        "question": "How might \"Do Nothing\" in Outbound signal weakness to Rexa?",
+        "options": [
+          { "id": "a", "label": "It suggests EVans lacks alternative buyers" },
+          { "id": "b", "label": "It increases EVans' production capacity" },
+          { "id": "c", "label": "It reduces EVans' supplier costs" },
+          { "id": "d", "label": "It strengthens EVans' rivalry with Electrify Inc." }
+        ],
+        "correctAnswerId": "a"
+      }
+    ],
+    "event-4-emission-norms": [
+      {
+        "id": "e4q1",
+        "question": "Why does securing 1,500 batteries amplify EVans' advantage more than shifting to Rusloth?",
+        "options": [
+          { "id": "a", "label": "It directly supports higher production to exploit Electrify's weakness" },
+          { "id": "b", "label": "It reduces long-term supplier costs" },
+          { "id": "c", "label": "It attracts new buyers like Rexa" },
+          { "id": "d", "label": "It counters SmartRide's growth" }
+        ],
+        "correctAnswerId": "a"
+      },
+      {
+        "id": "e4q2",
+        "question": "What risk does launching a new eco-friendly EV face if SmartRide expands?",
+        "options": [
+          { "id": "a", "label": "Higher production costs" },
+          { "id": "b", "label": "Delayed market share gains as substitutes grow" },
+          { "id": "c", "label": "Reduced supplier reliability" },
+          { "id": "d", "label": "Increased competition from Tesla" }
+        ],
+        "correctAnswerId": "b"
+      },
+      {
+        "id": "e4q3",
+        "question": "What could weaken the effectiveness of trade-in discounts?",
+        "options": [
+          { "id": "a", "label": "Electrify Inc. offering its own EV trade-ins" },
+          { "id": "b", "label": "Rexa demanding lower prices" },
+          { "id": "c", "label": "LiOn raising battery prices" },
+          { "id": "d", "label": "SmartRide losing customers" }
+        ],
+        "correctAnswerId": "a"
+      },
+      {
+        "id": "e4q4",
+        "question": "How might \"Do Nothing\" in Operations limit EVans' long-term gain?",
+        "options": [
+          { "id": "a", "label": "It fails to build on Electrify's weakened eco-credentials" },
+          { "id": "b", "label": "It reduces EVans' supplier options" },
+          { "id": "c", "label": "It increases buyer power" },
+          { "id": "d", "label": "It raises production costs" }
+        ],
+        "correctAnswerId": "a"
+      }
+    ],
+    "event-5-tesla-coming": [
+      {
+        "id": "e5q1",
+        "question": "Why is increasing battery orders insufficient against Tesla's threat?",
+        "options": [
+          { "id": "a", "label": "It doesn't address Tesla's premium market focus" },
+          { "id": "b", "label": "It raises EVans' production costs" },
+          { "id": "c", "label": "It weakens EVans' position with Rexa" },
+          { "id": "d", "label": "It reduces Electrify Inc.'s market share" }
+        ],
+        "correctAnswerId": "a"
+      },
+      {
+        "id": "e5q2",
+        "question": "What supply chain risk could undermine developing a premium EV?",
+        "options": [
+          { "id": "a", "label": "Dependence on LiOn if India Mines isn't expedited" },
+          { "id": "b", "label": "Rusloth lowering battery prices" },
+          { "id": "c", "label": "SmartRide increasing ride-sharing rates" },
+          { "id": "d", "label": "Electrify Inc. scaling EV production" }
+        ],
+        "correctAnswerId": "a"
+      },
+      {
+        "id": "e5q3",
+        "question": "How might cutting prices by 10% hurt EVans when Tesla enters?",
+        "options": [
+          { "id": "a", "label": "It reduces margins, limiting funds to compete in premium segment" },
+          { "id": "b", "label": "It increases market share too quickly" },
+          { "id": "c", "label": "It weakens supplier relationships" },
+          { "id": "d", "label": "It attracts more buyers like Rexa" }
+        ],
+        "correctAnswerId": "a"
+      },
+      {
+        "id": "e5q4",
+        "question": "What signal might \"Do Nothing\" in all categories send to investors?",
+        "options": [
+          { "id": "a", "label": "EVans lacks a proactive strategy against Tesla" },
+          { "id": "b", "label": "EVans is focusing on profitability" },
+          { "id": "c", "label": "EVans is strengthening its supply chain" },
+          { "id": "d", "label": "EVans is targeting new buyers" }
+        ],
+        "correctAnswerId": "a"
+      }
+    ]
+  }
+}

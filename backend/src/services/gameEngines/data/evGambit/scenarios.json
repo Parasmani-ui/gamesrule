@@ -1,0 +1,25 @@
+{
+  "defaultScenario": "default",
+  "scenarios": {
+    "default": {
+      "id": "default",
+      "name": "EVans — National EV Strategy Challenge",
+      "description": "Canonical 5-event scripted simulation. Play as EVans, an Indian EV manufacturer, navigating Government Push, Import Ban, Buyer Acquisition, Emission Norms, and Tesla's entry. Apply Porter's Five Forces to score strategic decisions across 5 rounds.",
+      "startingCash": 100000000,
+      "numRounds": 5,
+      "eventSet": "default",
+      "decisionSet": "default",
+      "quizSet": "default"
+    },
+    "delhi-startup": {
+      "id": "delhi-startup",
+      "name": "EVans — Delhi-Startup Variant",
+      "description": "A constrained-cash variant for EV startup contexts: smaller balance sheet, identical event timeline. Tests strategy under tighter affordability gates.",
+      "startingCash": 60000000,
+      "numRounds": 5,
+      "eventSet": "default",
+      "decisionSet": "default",
+      "quizSet": "default"
+    }
+  }
+}

@@ -182,11 +182,11 @@
   {
     "id": 10,
     "slug": "ev-gambit",
-    "name": "EV Gambit - Strategic Management",
+    "name": "EV Gambit: A Strategy Simulation",
     "type": "strategy",
-    "author": "Parasmani Skills Team",
+    "author": "Prof. Devasheesh Mathur, IMI New Delhi",
     "description": "Strategic management simulation based on Porter's Five Forces. Navigate industry events, make strategic decisions, respond to competitive moves, and gain market share in the EV industry.",
-    "duration_minutes": 55,
+    "duration_minutes": 60,
     "difficulty_level": "advanced",
     "learning_objectives": [
       "Apply Porter's Five Forces framework",
@@ -196,7 +196,7 @@
     ],
     "max_players": 4,
     "min_players": 1,
-    "supports_bots": true,
+    "supports_bots": false,
     "tags": ["strategy", "porter", "competition", "multiplayer"]
   },
   {

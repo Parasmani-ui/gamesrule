@@ -1,11 +1,66 @@
 # EV Gambit — Engine Audit
 
+**Status: Session 6 complete (2026-05-07).**
+
+Backend ship checklist (Session 6):
+- [x] Externalised events / decisions / quizzes into
+      `backend/src/services/gameEngines/data/evGambit/` (4 JSON files;
+      "default" + "delhi-startup" scenarios).
+- [x] DEFECT 1 — `correctAnswerId` stripped from `getPublicState` and from
+      `getParticipantState` until the participant has answered. See the
+      sanitization-boundary block in [EVGambitEngine.ts](../backend/src/services/gameEngines/EVGambitEngine.ts#L477)
+      (`stripQuiz`, `publicDecisions`).
+- [x] DEFECT 2 — forged decision payload rejected. `handleDecisionSubmission`
+      now accepts only a `decisionId`; cost / impact / effects come from
+      `decisions.json`, never from the client.
+- [x] DEFECT 3 — double-counted force impacts collapsed into a single
+      application path: `event.forceDeltas` is the only source. The old
+      `applyEventEffects` switch is gone; per-event state-shape changes
+      live in `event.stateChanges` (`importBan`, `rexaAcquisition`).
+- [x] DEFECT 4 — `calculateDecisionScore(decision, round, event)` reads a
+      `roundModifiers` map per option (default 1.0). Encodes the
+      "timing matters" pedagogical hook.
+- [x] DEFECT 5 — split into `computeMetricsSyncFor(state)` (used by
+      `getParticipantState.metrics`) and async `computeMetrics()` (contract
+      method). Same shape as Customer-In-Store's fix.
+- [x] `simulations-data.json` row 10: name, author, duration_minutes (60),
+      supports_bots (false). Type kept as "strategy". Re-seeded; DB
+      readback confirmed.
+- [x] Tests: `backend/src/__tests__/EVGambitEngine.test.ts` (43 tests, all
+      green). Mocks Prisma per FruitBeer / Customer-In-Store pattern.
+- [x] Engine line count: **979 lines** (from 1,739 — 44% reduction; under
+      the 1,100 target).
+
+Additional refactors landed in Session 6 beyond the audit's punch list:
+- Events fire on round entry (`enterCurrentRound`) instead of inside
+  `handleDecisionSubmission`. Resolves the asymmetry flagged in audit
+  C5 and lets tests inspect post-event state cleanly.
+- Dead fallback init code (audit C2) and legacy state-format conversion
+  (lines 158-167 of the old engine) removed.
+- Duplicated end-of-game logic (audit C3) collapsed into one path in
+  `handleContinueToNextEvent`.
+- `decision.name`-string matching (audit C4) replaced with explicit
+  `effects: ['expedite-india-mines']` enum on the relevant decisions in
+  `decisions.json`.
+- Random `0.8-1.2x` impact noise (audit pedagogy issue 3) removed for
+  deterministic teaching feedback.
+- Stale-cache detection on init: per-participant state without
+  `triggeredEventIds` is treated as pre-Session-6 and discarded.
+- New `stateChanges.importBan` and `stateChanges.rexaAcquisition` flags
+  on events let the engine apply non-numeric narrative state changes
+  without touching `applyEventEffects` (which no longer exists).
+
+UI work (Session 7) is the only remaining item before EV Gambit is
+fully Phase-1 ready.
+
+---
+
 **Sim:** "The EV Gambit: A Strategy Simulation"
 **Slug:** `ev-gambit`
-**Engine file:** [backend/src/services/gameEngines/EVGambitEngine.ts](../backend/src/services/gameEngines/EVGambitEngine.ts) (1,739 lines)
-**Tests:** none — `backend/src/__tests__/EVGambitEngine.test.ts` does not exist
+**Engine file:** [backend/src/services/gameEngines/EVGambitEngine.ts](../backend/src/services/gameEngines/EVGambitEngine.ts) (1,739 lines pre-refactor → 979 lines post-Session-6)
+**Tests:** [backend/src/__tests__/EVGambitEngine.test.ts](../backend/src/__tests__/EVGambitEngine.test.ts) — 43 tests, all green (Session 6)
 **Date:** 2026-05-07
-**Session:** 5 (audit-only)
+**Session:** 5 (audit) + 6 (refactor & fix)
 
 ---
 
