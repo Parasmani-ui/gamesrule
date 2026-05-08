@@ -221,7 +221,7 @@ non-bot participants submit, with a `facilitator_advance_round` manual override.
 |---|---|---|---:|:---:|:---:|---|
 | 1 | Fruit Beer Game | `fruit-beer-game` | 524 | ✅ (15) | ✅ | **Phase 1 complete** (2026-05-06). Bullwhip metric + weeklyStats + author corrections shipped Session 3; UI under `components/games/FruitBeer/` (7 files). |
 | 2 | EV Gambit | `ev-gambit` | 979 | ✅ (43) | ✅ | **Phase 1 complete** (2026-05-08). Refactored 1,739 → 979 (Session 6); 9 UI files under `components/games/EVGambit/` (Session 7). 5 integrity defects fixed. |
-| 3 | HR Compensation | `hr-compensation` | 516 | ✅ (26) | ✅ | **Phase 1 complete** (2026-05-05). Content externalized to JSON (3 scenarios), 5 UI files under `components/games/HRCompensation/`. **Pending micro-fix:** `applyAction` does not validate stage — socket client can skip stages. Documented gap; deferred to Phase 1 wrap-up (Session 11). |
+| 3 | HR Compensation | `hr-compensation` | 516 | ✅ (32) | ✅ | Phase 1 fully complete — engine + UI + stage validation shipped 2026-05-05 + 2026-05-08 (Session 11a). Content externalized to JSON (3 scenarios), 5 UI files under `components/games/HRCompensation/`. All three stage handlers reject out-of-order actions (Pattern C); test matrix covers every illegal stage→stage transition. |
 | 4 | Sustainable Select | `sustainable-select` | 605 | ❌ | ❌ | Built, not in Phase 1. |
 | 5 | Defect Detectives | `defect-detectives` | 967 | ✅ (36) | ✅ | **Phase 1 complete — engine + UI shipped 2026-05-08.** Session 9 backend Option B + Session 10 UI landed same day. 14 UI files under `components/games/DefectDetectives/`: scenario header, dataset explorer, 7 QC tool panel, 7 typed chart components (Pareto/Histogram/Control Chart/Scatter/Check Sheet/Fishbone/Flowchart), inspection decision UI, four-bucket cost-of-quality panel, and bias-reveal final screen. Pattern E enforced — `ToolDescriptor` omits `reduction` to match the engine's stripped publicTools(); each tool result is individually typed (no `any`). Bias narrative hidden until GameComplete. |
 | 6 | Order Ops | `order-ops` | 501 | ❌ | ❌ | Built, not in Phase 1. Likely duration/phase drift. |
@@ -532,9 +532,8 @@ at least one — they are systematic, not one-off.
 - Skip-ahead: action for round/stage/question N while engine is on
   earlier round.
 - Replay: actions for closed rounds accepted.
-- Examples: HR Comp `applyAction` doesn't check stage (still pending
-  micro-fix as of 2026-05-08); Customer In Store skip-ahead (pre-S4); EV
-  Gambit (S5).
+- Examples: HR Comp `applyAction` (fixed Session 11a); Customer In Store
+  skip-ahead (pre-S4); EV Gambit (S5).
 - **Fix pattern:** every handler asserts `state.currentX === expectedX`
   at the top.
 

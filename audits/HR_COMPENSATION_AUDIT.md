@@ -8,6 +8,47 @@
 
 ---
 
+## Status: Stage-validation patch landed Session 11a (2026-05-08)
+
+The Pattern C gap tracked since Session 2 is now formally closed under the
+Phase 1 wrap-up. The engine already enforced stage guards in all three
+handlers as of 2026-05-05 (see Session-2 status block below). Session 11a
+audited that fix end-to-end and rounded out the test matrix to cover every
+illegal stage→stage transition (3 new cases: stage-3 from
+`attribute-weighting`, stage-1 from `candidate-ranking`, stage-2 from
+`candidate-ranking`).
+
+Tests: `HRCompensationEngine.test.ts` grew from 29 → 32 cases; full backend
+suite went from 154 → 157, all green. No existing test depended on the
+old stage-skip behaviour.
+
+Sim isolation respected: only `HRCompensationEngine.test.ts`,
+`audits/HR_COMPENSATION_AUDIT.md`, and `CLAUDE.md` were touched.
+
+---
+
+## Status: stage validation fixed (2026-05-05)
+
+The Session-2 probe finding (engine routes by `action.stage` without checking
+it against `state.currentStage`) is closed. Each of the three stage handlers
+(`handleExpertSelection`, `handleAttributeWeighting`, `handleCandidateRanking`)
+now guards against out-of-order actions at entry and returns
+`{ success: false, message: 'Not in <stage> stage (current: <actual>)' }`
+without mutating state. A malicious socket client can no longer skip Stage 1
+to reach Spearman's ρ = 1.0.
+
+Tests: `HRCompensationEngine.test.ts` grew from 26 to 29 cases (+4 new
+stage-guard cases, –1 documented-gap test that asserted the old behaviour).
+Coverage of `HRCompensationEngine.ts` is 89.55% statements / 75% branches.
+
+Verification: `npm test HRCompensationEngine.test.ts` (29/29 green) and
+`cd frontend && npm run build` (clean) both pass on 2026-05-05.
+
+Sim isolation respected: only `HRCompensationEngine.ts` and its test file
+were touched.
+
+---
+
 ## Status: Session A complete (2026-05-04)
 
 Backend externalisation + scenario presets + attribution fix landed. Backend

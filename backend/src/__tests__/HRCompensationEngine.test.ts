@@ -513,6 +513,79 @@ describe('HRCompensationEngine', () => {
       expect(engine.getPublicState().currentStage).toBe('attribute-weighting');
     });
 
+    it('rejects a stage-3 action while currentStage=attribute-weighting', async () => {
+      // Advance to stage 2 legitimately
+      await engine.applyAction(testParticipantId, {
+        stage: 'expert-selection',
+        data: { expertIds: ['exp1', 'exp2'] },
+      });
+      expect(engine.getPublicState().currentStage).toBe('attribute-weighting');
+
+      // Try to skip stage 2 by submitting candidate-ranking directly
+      const result = await engine.applyAction(testParticipantId, {
+        stage: 'candidate-ranking',
+        data: { ranking: ['cand1', 'cand2', 'cand3', 'cand4'] },
+      });
+
+      expect(result.success).toBe(false);
+      expect(result.message).toContain('Not in candidate-ranking stage');
+      const publicState = engine.getPublicState();
+      expect(publicState.currentStage).toBe('attribute-weighting');
+      expect(publicState.isComplete).toBe(false);
+    });
+
+    it('rejects a stage-1 action while currentStage=candidate-ranking', async () => {
+      // Advance to stage 3 legitimately
+      await engine.applyAction(testParticipantId, {
+        stage: 'expert-selection',
+        data: { expertIds: ['exp1', 'exp2'] },
+      });
+      await engine.applyAction(testParticipantId, {
+        stage: 'attribute-weighting',
+        data: {
+          weights: { tech: 0.35, leadership: 0.25, experience: 0.20, education: 0.10, cultural: 0.10 },
+        },
+      });
+      expect(engine.getPublicState().currentStage).toBe('candidate-ranking');
+
+      // Try to re-submit stage 1
+      const result = await engine.applyAction(testParticipantId, {
+        stage: 'expert-selection',
+        data: { expertIds: ['exp3'] },
+      });
+
+      expect(result.success).toBe(false);
+      expect(result.message).toContain('Not in expert-selection stage');
+      expect(engine.getPublicState().currentStage).toBe('candidate-ranking');
+    });
+
+    it('rejects a stage-2 action while currentStage=candidate-ranking', async () => {
+      // Advance to stage 3 legitimately
+      await engine.applyAction(testParticipantId, {
+        stage: 'expert-selection',
+        data: { expertIds: ['exp1', 'exp2'] },
+      });
+      await engine.applyAction(testParticipantId, {
+        stage: 'attribute-weighting',
+        data: {
+          weights: { tech: 0.35, leadership: 0.25, experience: 0.20, education: 0.10, cultural: 0.10 },
+        },
+      });
+      expect(engine.getPublicState().currentStage).toBe('candidate-ranking');
+
+      // Try to re-submit stage 2
+      const result = await engine.applyAction(testParticipantId, {
+        stage: 'attribute-weighting',
+        data: {
+          weights: { tech: 0.20, leadership: 0.20, experience: 0.20, education: 0.20, cultural: 0.20 },
+        },
+      });
+
+      expect(result.success).toBe(false);
+      expect(result.message).toContain('Not in attribute-weighting stage');
+      expect(engine.getPublicState().currentStage).toBe('candidate-ranking');
+    });
+
     it('still allows the legitimate forward path 1 -> 2 -> 3', async () => {
       const stage1 = await engine.applyAction(testParticipantId, {
         stage: 'expert-selection',
