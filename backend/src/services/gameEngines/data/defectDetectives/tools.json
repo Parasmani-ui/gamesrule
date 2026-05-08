@@ -1,0 +1,69 @@
+{
+  "canonicalTools": [
+    "Check Sheet",
+    "Histogram",
+    "Pareto Analysis",
+    "Cause-and-Effect Diagram",
+    "Scatter Diagram",
+    "Flowchart",
+    "Control Chart"
+  ],
+  "tools": {
+    "Check Sheet": {
+      "name": "Check Sheet",
+      "category": "data-collection",
+      "description": "Structured data collection across shifts and defect categories. Reveals tally counts that anchor downstream analysis.",
+      "kind": "data-driven",
+      "reduction": 5,
+      "applicableTo": ["consumer-goods", "quick-commerce"]
+    },
+    "Histogram": {
+      "name": "Histogram",
+      "category": "distribution",
+      "description": "Frequency distribution of per-batch defect rates. Surfaces mean and spread.",
+      "kind": "data-driven",
+      "reduction": 8,
+      "applicableTo": ["consumer-goods", "quick-commerce"]
+    },
+    "Pareto Analysis": {
+      "name": "Pareto Analysis",
+      "category": "prioritization",
+      "description": "Ranks defect categories by frequency to surface the vital few that account for the bulk of defects.",
+      "kind": "data-driven",
+      "reduction": 15,
+      "applicableTo": ["consumer-goods", "quick-commerce"]
+    },
+    "Cause-and-Effect Diagram": {
+      "name": "Cause-and-Effect Diagram",
+      "category": "root-cause",
+      "description": "Fishbone (Ishikawa) diagram organising potential causes by category (man, machine, method, material, environment).",
+      "kind": "structural",
+      "reduction": 12,
+      "applicableTo": ["consumer-goods", "quick-commerce"]
+    },
+    "Scatter Diagram": {
+      "name": "Scatter Diagram",
+      "category": "correlation",
+      "description": "Plot of one process variable against defect count to surface correlations.",
+      "kind": "data-driven",
+      "reduction": 7,
+      "applicableTo": ["consumer-goods", "quick-commerce"]
+    },
+    "Flowchart": {
+      "name": "Flowchart",
+      "category": "process-mapping",
+      "description": "Sequence map of the production / fulfilment process, useful for spotting missing or ambiguous steps.",
+      "kind": "structural",
+      "reduction": 10,
+      "applicableTo": ["consumer-goods", "quick-commerce"]
+    },
+    "Control Chart": {
+      "name": "Control Chart",
+      "category": "spc",
+      "description": "Time-series chart of defect rates with UCL/LCL bounds at μ ± 3σ. Distinguishes special-cause from common-cause variation.",
+      "kind": "data-driven",
+      "reduction": 18,
+      "applicableTo": ["consumer-goods", "quick-commerce"]
+    }
+  }
+}

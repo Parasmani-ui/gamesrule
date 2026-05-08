@@ -1,11 +1,16 @@
 # Defect Detectives — Engine Audit
 
+**Status: Session 9 complete (Option B executed)** — 2026-05-08.
+Backend reskinned to MS-GAME.txt-canonical two-context shape
+(consumer-goods + quick-commerce). Content externalised, all seven
+audit defects landed, 36 tests added. UI work pending in Session 10.
+
 **Sim:** "Defect Detectives: A Quality Control Simulation"
-**Slug:** `defect-detectives` *(canonical msgames slug is `defect-detective` — singular; see D8)*
-**Engine file:** [backend/src/services/gameEngines/DefectDetectivesEngine.ts](../backend/src/services/gameEngines/DefectDetectivesEngine.ts) (503 lines)
-**Tests:** none
+**Slug:** `defect-detectives` *(canonical msgames slug is `defect-detective` — singular; see D8 — kept plural for cross-platform consistency)*
+**Engine file:** [backend/src/services/gameEngines/DefectDetectivesEngine.ts](../backend/src/services/gameEngines/DefectDetectivesEngine.ts) (967 lines post-refactor — engine grew from 503 because hardcoded analysis strings were replaced with seven real analytical methods, biased data generator, four-bucket cost tracking, drift mechanic, and seeded RNG)
+**Tests:** [backend/src/__tests__/DefectDetectivesEngine.test.ts](../backend/src/__tests__/DefectDetectivesEngine.test.ts) (36 tests)
 **Date:** 2026-05-08
-**Session:** 8 (audit)
+**Session:** 8 (audit) → 9 (Option B execution)
 
 ---
 

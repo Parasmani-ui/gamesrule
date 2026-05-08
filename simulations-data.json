@@ -142,11 +142,11 @@
   {
     "id": 8,
     "slug": "defect-detectives",
-    "name": "Defect Detectives - Quality Control",
+    "name": "Defect Detectives: A Quality Control Simulation",
     "type": "quality-management",
-    "author": "Parasmani Skills Team",
-    "description": "Quality control simulation using 7 QC tools: check sheets, histograms, Pareto charts, fishbone diagrams, scatter plots, flowcharts, and control charts. Identify root causes and reduce defects.",
-    "duration_minutes": 50,
+    "author": "Dr. Jaya Priyadarshini, Great Lakes Gurgaon",
+    "description": "Quality Control Manager simulation across two contexts (consumer-goods manufacturing and quick-commerce dark store). Apply the 7 QC Tools — check sheets, histograms, Pareto charts, cause-and-effect diagrams, scatter diagrams, flowcharts, control charts — to identify root causes and reduce defects from 8% to 2%.",
+    "duration_minutes": 60,
     "difficulty_level": "intermediate",
     "learning_objectives": [
       "Apply 7 QC tools systematically",
@@ -157,7 +157,7 @@
     "max_players": 1,
     "min_players": 1,
     "supports_bots": false,
-    "tags": ["quality", "six-sigma", "analytics", "single-player"]
+    "tags": ["operations", "quality-control", "six-sigma", "analytics", "single-player"]
   },
   {
     "id": 9,

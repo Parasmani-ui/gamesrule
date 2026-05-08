@@ -1,0 +1,38 @@
+{
+  "defectTypeSets": {
+    "consumer-goods": [
+      { "id": "scratch", "label": "Scratch", "category": "finish" },
+      { "id": "dent", "label": "Dent", "category": "material" },
+      { "id": "misalignment", "label": "Misalignment", "category": "machine" },
+      { "id": "color-defect", "label": "Color defect", "category": "material" },
+      { "id": "size-error", "label": "Size error", "category": "machine" }
+    ],
+    "quick-commerce": [
+      { "id": "mispick", "label": "Mispick", "category": "method" },
+      { "id": "damage", "label": "Damage", "category": "handling" },
+      { "id": "late-pack", "label": "Late Pack", "category": "method" },
+      { "id": "wrong-qty", "label": "Wrong Quantity", "category": "method" },
+      { "id": "cold-chain-break", "label": "Cold Chain Break", "category": "equipment" }
+    ]
+  },
+  "fishboneCategories": {
+    "consumer-goods": [
+      "Material quality (incoming sheet metal lot variability)",
+      "Equipment calibration (machine M2 calibration drift)",
+      "Operator training (Shift B onboarding gap)",
+      "Method (rework loop bypassing inspection step)",
+      "Environment (humidity affecting paint cure)"
+    ],
+    "quick-commerce": [
+      "Picker training (new-joiner accuracy on Shift B)",
+      "Conveyor / cart handling (impact damage to packs)",
+      "Inventory accuracy (slot misallocation)",
+      "Method (multi-order batching reducing verification time)",
+      "Cold-chain integrity (insulated bag rotation)"
+    ]
+  },
+  "flowchartFindings": {
+    "consumer-goods": "Process map shows the in-line inspection step is being skipped during shift handovers, allowing defects through before the final QA gate.",
+    "quick-commerce": "Process map shows the pre-dispatch verification step is bypassed during peak rush, sending mispicks straight to dispatch."
+  }
+}

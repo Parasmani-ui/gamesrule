@@ -1,0 +1,63 @@
+{
+  "defaultScenario": "consumer-goods",
+  "scenarios": {
+    "consumer-goods": {
+      "id": "consumer-goods",
+      "name": "Consumer Goods Manufacturing",
+      "description": "Quality Control Manager at a consumer goods plant. Use the 7 QC Tools to bring the line into statistical control and reduce defects from 8% to a 2% target across 20 batches of 1000 units each. Currency in INR (₹).",
+      "currency": "INR",
+      "currencySymbol": "₹",
+      "factoryName": "Surya Consumer Products Ltd.",
+      "unitName": "unit",
+      "batchSize": 1000,
+      "numBatches": 20,
+      "warmupBatches": 10,
+      "initialDefectRate": 8.0,
+      "targetDefectRate": 2.0,
+      "inspectionCostPerUnit": 100,
+      "defectCostPerUnit": 2500,
+      "noInspectionDriftPerBatch": 0.1,
+      "noInspectionDriftCap": 4.0,
+      "shiftSet": "consumer-goods",
+      "defectTypeSet": "consumer-goods",
+      "operatorSet": "consumer-goods",
+      "machineSet": "consumer-goods",
+      "structuralInsightSet": "consumer-goods",
+      "biasProfile": {
+        "dominantDefectShare": 0.45,
+        "secondaryDefectShare": 0.25,
+        "dominantMachineShare": 0.5,
+        "dominantShiftMultiplier": 1.4
+      }
+    },
+    "quick-commerce": {
+      "id": "quick-commerce",
+      "name": "Quick-Commerce Dark Store",
+      "description": "Quality Control Manager at a 10-minute delivery dark store. Apply the 7 QC Tools to fulfilment data — mispicks, damages, late packs, wrong quantities, cold-chain breaks — across 20 shifts of 1000 orders each. Currency in INR (₹).",
+      "currency": "INR",
+      "currencySymbol": "₹",
+      "factoryName": "Bolt-10 Dark Store, Andheri",
+      "unitName": "order",
+      "batchSize": 1000,
+      "numBatches": 20,
+      "warmupBatches": 10,
+      "initialDefectRate": 8.0,
+      "targetDefectRate": 2.0,
+      "inspectionCostPerUnit": 60,
+      "defectCostPerUnit": 1800,
+      "noInspectionDriftPerBatch": 0.12,
+      "noInspectionDriftCap": 4.0,
+      "shiftSet": "quick-commerce",
+      "defectTypeSet": "quick-commerce",
+      "operatorSet": "quick-commerce",
+      "machineSet": "quick-commerce",
+      "structuralInsightSet": "quick-commerce",
+      "biasProfile": {
+        "dominantDefectShare": 0.5,
+        "secondaryDefectShare": 0.25,
+        "dominantMachineShare": 0.45,
+        "dominantShiftMultiplier": 1.3
+      }
+    }
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "shiftSets": {
+    "consumer-goods": [
+      { "id": "A", "label": "Shift A — Morning (06:00–14:00)" },
+      { "id": "B", "label": "Shift B — Afternoon (14:00–22:00)" },
+      { "id": "C", "label": "Shift C — Night (22:00–06:00)" }
+    ],
+    "quick-commerce": [
+      { "id": "A", "label": "Shift A — Day (08:00–16:00)" },
+      { "id": "B", "label": "Shift B — Evening Rush (16:00–00:00)" }
+    ]
+  },
+  "operatorSets": {
+    "consumer-goods": ["Anjali", "Rahul", "Priya", "Vikram", "Meera"],
+    "quick-commerce": ["Aisha", "Rohan", "Sneha", "Karan"]
+  },
+  "machineSets": {
+    "consumer-goods": ["M1", "M2", "M3", "M4"],
+    "quick-commerce": ["Zone-1", "Zone-2", "Zone-3"]
+  }
+}
