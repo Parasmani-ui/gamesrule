@@ -199,7 +199,7 @@ non-bot participants submit, with a `facilitator_advance_round` manual override.
 | # | Simulation | Slug | Lines | Tests | Status |
 |---|---|---|---:|:---:|---|
 | 1 | Fruit Beer Game | `fruit-beer-game` | 524 | ✅ | **Phase 1 complete** — engine + UI shipped 2026-05-06; bullwhip metric + weeklyStats fixes in same session |
-| 2 | EV Gambit | `ev-gambit` | 979 | ✅ (43) | **Phase 1 backend complete** — Session 6 (2026-05-07): externalised content to `data/evGambit/`, fixed 5 defects (quiz answer leak, forged decisions, force double-count, round-context scoring, async/sync metric leak), 44% size reduction (1,739 → 979). UI pending Session 7. |
+| 2 | EV Gambit | `ev-gambit` | 979 | ✅ (43) | **Phase 1 complete** — engine + UI shipped 2026-05-08 (Session 7); UI under `components/games/EVGambit/` (9 files: index + PortersForcesPanel + EventBriefing + DecisionPanel + Reflection + ReviewSummary + Quiz + RoundComplete + FinalDebrief), Recharts radar for live forces panel, only `decisionId` sent on decision submit, quiz `correctAnswerId` sourced from engine `quizSubmissions[].questions[]` only. |
 | 3 | HR Compensation | `hr-compensation` | 516 | ✅ | Built, **suspected wrong-mechanic** (see §8) |
 | 4 | Sustainable Select | `sustainable-select` | 605 | ❌ | Built |
 | 5 | Defect Detectives | `defect-detectives` | 503 | ❌ | Built, likely needs branding refit |
