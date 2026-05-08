@@ -3,6 +3,7 @@ import { HRCompensationGame } from './HRCompensation';
 import { FruitBeerGame } from './FruitBeer';
 import { CustomerInStoreGame } from './CustomerInStore';
 import { EVGambitGame } from './EVGambit';
+import { DefectDetectivesGame } from './DefectDetectives';
 import { Placeholder } from './Placeholder';
 
 /**
@@ -17,6 +18,7 @@ export const gameComponents: Record<string, GameComponent> = {
   'fruit-beer-game': FruitBeerGame,
   'customer-in-store': CustomerInStoreGame,
   'ev-gambit': EVGambitGame,
+  'defect-detectives': DefectDetectivesGame,
 };
 
 export function resolveGameComponent(slug: string): GameComponent {

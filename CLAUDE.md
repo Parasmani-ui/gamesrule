@@ -223,7 +223,7 @@ non-bot participants submit, with a `facilitator_advance_round` manual override.
 | 2 | EV Gambit | `ev-gambit` | 979 | ✅ (43) | ✅ | **Phase 1 complete** (2026-05-08). Refactored 1,739 → 979 (Session 6); 9 UI files under `components/games/EVGambit/` (Session 7). 5 integrity defects fixed. |
 | 3 | HR Compensation | `hr-compensation` | 516 | ✅ (26) | ✅ | **Phase 1 complete** (2026-05-05). Content externalized to JSON (3 scenarios), 5 UI files under `components/games/HRCompensation/`. **Pending micro-fix:** `applyAction` does not validate stage — socket client can skip stages. Documented gap; deferred to Phase 1 wrap-up (Session 11). |
 | 4 | Sustainable Select | `sustainable-select` | 605 | ❌ | ❌ | Built, not in Phase 1. |
-| 5 | Defect Detectives | `defect-detectives` | 967 | ✅ (36) | ❌ | **Phase 1 backend complete — UI pending** (Session 9, 2026-05-08). Option B reskin shipped: consumer-goods + quick-commerce scenarios in JSON, all 7 audit defects fixed (tool-name validation, data-driven insights, perBatch math, sample-size catch rate, no-inspection drift, computeMetrics async leak, Pattern A reduction strip). Seeded RNG, biased dataset. Engine grew from 503 → 967 lines (adding seven real analytical methods + four-bucket cost tracking — audit's ~350 target was optimistic). Session 10 (UI) pending. |
+| 5 | Defect Detectives | `defect-detectives` | 967 | ✅ (36) | ✅ | **Phase 1 complete — engine + UI shipped 2026-05-08.** Session 9 backend Option B + Session 10 UI landed same day. 14 UI files under `components/games/DefectDetectives/`: scenario header, dataset explorer, 7 QC tool panel, 7 typed chart components (Pareto/Histogram/Control Chart/Scatter/Check Sheet/Fishbone/Flowchart), inspection decision UI, four-bucket cost-of-quality panel, and bias-reveal final screen. Pattern E enforced — `ToolDescriptor` omits `reduction` to match the engine's stripped publicTools(); each tool result is individually typed (no `any`). Bias narrative hidden until GameComplete. |
 | 6 | Order Ops | `order-ops` | 501 | ❌ | ❌ | Built, not in Phase 1. Likely duration/phase drift. |
 | 7 | Dual Source Dilemma | `dual-source-dilemma` | 477 | ❌ | ❌ | Built, not in Phase 1. Generic vs Surat/Bangladesh framing. |
 | 8 | Demand Forecast Challenge | `demand-forecast-challenge` | 412 | ❌ | ❌ | **Dropped from Phase 1** (2026-05-04, §11 Q1). No source-of-truth in MSgames canonical sources. |
@@ -231,10 +231,10 @@ non-bot participants submit, with a `facilitator_advance_round` manual override.
 | 10 | Onion Dilemma | `onion-dilemma` | 135 | ❌ | ❌ | **Skeleton.** Not in Phase 1. |
 | 11 | TOC Factory | `toc-factory` | 124 | ❌ | ❌ | **Skeleton.** Not in Phase 1. |
 
-**Phase 1 progress: 4 of 5 sims complete (backend); Defect Detectives backend
-landed Session 9.** Defect Detectives Session 10 (UI) remaining, then Session
-11 wrap-up. Total backend tests as of 2026-05-08 post-Session-9:
-**154 passing** (118 prior + 36 Defect Detectives).
+**Phase 1 progress: 5 of 5 sims complete (engine + UI). Session 11 wrap-up
+remaining (smoke tests + HR Comp stage-validation patch).** Defect Detectives
+backend (Session 9) and UI (Session 10) both landed 2026-05-08. Total backend
+tests: **154 passing** (118 prior + 36 Defect Detectives).
 
 **Frontend:** dispatcher pattern landed Session 2 (2026-05-05).
 `pages/sessions/[sessionId].tsx` shrank from 2,324 → ~570 lines and now does
@@ -270,8 +270,8 @@ sequence with session map:
 | 7 | EV Gambit | UI | ✅ |
 | 8 | Defect Detectives | Audit (Opus) | ✅ |
 | 9 | Defect Detectives | Backend (Option B) | ✅ |
-| 10 | Defect Detectives | UI | ⏳ next |
-| 11 | Phase 1 wrap-up | Smoke tests + HR Comp stage-validation patch | pending |
+| 10 | Defect Detectives | UI | ✅ |
+| 11 | Phase 1 wrap-up | Smoke tests + HR Comp stage-validation patch | ⏳ next |
 
 ### 7.2 Per-sim workflow
 
@@ -585,7 +585,7 @@ at least one — they are systematic, not one-off.
 
 ---
 
-*Last updated: 2026-05-08 (post-Session-9: Defect Detectives backend
-complete via Option B). When making non-trivial structural changes to
-engine architecture, schema, or workflow, update this file in the same
-commit.*
+*Last updated: 2026-05-08 (post-Session-10: Defect Detectives UI shipped
+— Phase 1 engine + UI complete for all 5 sims; Session 11 wrap-up next).
+When making non-trivial structural changes to engine architecture, schema,
+or workflow, update this file in the same commit.*
