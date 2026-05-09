@@ -76,34 +76,84 @@ export function initializeSocket(httpServer: HTTPServer): Server {
         const roomName = `session:${sessionId}`;
         await socket.join(roomName);
 
+        // Stash routing keys so per-participant broadcasts after auto-advance
+        // can target the right socket via fetchSockets().
+        socket.data.participantId = participantId;
+        socket.data.sessionId = sessionId;
+
         logger.info(`Socket ${socket.id} joined ${roomName}`);
 
-        // Send current state
+        // Send current state. Lazily initialize the engine if it's not ready
+        // — covers two cases: (1) the dev server restarted between the
+        // session's HTTP /start and the user joining (engine cache lost in
+        // memory), (2) engines whose getPublicState returns null instead of
+        // throwing when uninitialized (e.g. CustomerInStoreEngine), which
+        // previously fell through and emitted a session_update with null
+        // payloads, leaving stricter UI loading guards stuck on the spinner.
         try {
           const engine = GameEngineFactory.create(session.simulation.slug, sessionId);
-          
-          // Log for debugging
+
           logger.info(`Creating engine for simulation: ${session.simulation.slug}, session: ${sessionId}`);
-          
-          const publicState = engine.getPublicState();
-          const participantState = engine.getParticipantState(participantId);
+
+          let publicState = engine.getPublicState();
+          let participantState = engine.getParticipantState(participantId);
+
+          if (publicState == null && session.status === 'IN_PROGRESS') {
+            logger.warn(
+              `Engine for ${session.simulation.slug} (session ${sessionId}) returned null state on join; lazy-initializing.`
+            );
+            await engine.initialize(
+              (session.configuration as any) || getDefaultConfig(session.simulation.slug)
+            );
+            publicState = engine.getPublicState();
+            participantState = engine.getParticipantState(participantId);
+          }
 
           socket.emit('session_update', {
             publicState,
             participantState,
           });
         } catch (error: any) {
-          // Engine might not be initialized yet
-          logger.warn(`Could not get engine state for ${session.simulation.slug}:`, error?.message || error);
-          socket.emit('session_update', {
-            publicState: { 
-              status: session.status, 
-              currentRound: session.current_round,
-              simulationSlug: session.simulation.slug,
-              simulationName: session.simulation.name,
-            },
-            participantState: null,
-          });
+          // Engine threw on getState (uninitialized engines like FruitBeer call
+          // ensureInitialized which throws). Lazy-init before falling back.
+          logger.warn(`Engine state unavailable for ${session.simulation.slug}, lazy-initializing:`, error?.message || error);
+          try {
+            const engine = GameEngineFactory.create(session.simulation.slug, sessionId);
+            if (session.status === 'IN_PROGRESS') {
+              await engine.initialize(
+                (session.configuration as any) || getDefaultConfig(session.simulation.slug)
+              );
+              socket.emit('session_update', {
+                publicState: engine.getPublicState(),
+                participantState: engine.getParticipantState(participantId),
+              });
+            } else {
+              // Session not yet IN_PROGRESS — send a minimal placeholder.
+              socket.emit('session_update', {
+                publicState: {
+                  status: session.status,
+                  currentRound: session.current_round,
+                  simulationSlug: session.simulation.slug,
+                  simulationName: session.simulation.name,
+                },
+                participantState: null,
+              });
+            }
+          } catch (initError: any) {
+            logger.error(
+              `Failed to lazy-initialize engine for ${session.simulation.slug}:`,
+              initError?.message || initError
+            );
+            socket.emit('session_update', {
+              publicState: {
+                status: session.status,
+                currentRound: session.current_round,
+                simulationSlug: session.simulation.slug,
+                simulationName: session.simulation.name,
+              },
+              participantState: null,
+            });
+          }
         }
 
         // Broadcast participant joined
@@ -239,14 +289,35 @@ export function initializeSocket(httpServer: HTTPServer): Server {
 
           if (decisions.length === participants.length) {
             logger.info(`All players acted for round ${session.current_round + 1}, advancing...`);
-            
+
             // Advance round
             const roundResult = await engine.advanceRound();
 
             // Broadcast round complete
             io.to(roomName).emit('round_complete', roundResult);
 
-            // Send updated participant states
+            // Re-broadcast session_update PER PARTICIPANT with the post-advance
+            // state. The parent SessionPage only listens for session_update;
+            // without this, its publicState/participantState stay at the
+            // pre-advance round, and any subsequent parent re-render (e.g.
+            // from the action_result handler's setTimeout-loadSession) merges
+            // that stale snapshot back into per-game UI state, reverting
+            // currentWeek/currentRound from N+1 to N. Each socket's per-user
+            // participantState is keyed off socket.data.participantId set at
+            // join_session time.
+            const newPublicState = engine.getPublicState();
+            const roomSockets = await io.in(roomName).fetchSockets();
+            for (const s of roomSockets) {
+              const pid = (s.data as any)?.participantId;
+              if (!pid) continue;
+              s.emit('session_update', {
+                publicState: newPublicState,
+                participantState: engine.getParticipantState(pid),
+              });
+            }
+
+            // Send updated participant states (kept for sims whose UI
+            // subscribes to participant_state_update directly, e.g. FruitBeer)
             for (const participant of participants) {
               const participantState = engine.getParticipantState(participant.id);
               io.to(roomName).emit('participant_state_update', {

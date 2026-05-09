@@ -72,6 +72,26 @@ describe('CustomerInStoreEngine', () => {
       (prisma.sessionParticipant.findMany as jest.Mock).mockResolvedValue([]);
       await expect(engine.initialize({})).rejects.toThrow('No participant');
     });
+
+    // Regression for Session 11c.5 Bug 1. Documents the contract that the
+    // sockets/index.ts join_session lazy-init relies on: the engine returns
+    // null (not throws) when getPublicState is called pre-initialize, AND
+    // returns a non-null populated object once initialized. If this contract
+    // ever flips back (or to throwing), the join_session handler must be
+    // re-audited because the loading-vs-loaded check on the client depends
+    // on this transition producing a non-empty state object.
+    it('returns null from getPublicState before initialize and a populated object after', async () => {
+      const fresh = new CustomerInStoreEngine('contract-test');
+      expect(fresh.getPublicState()).toBeNull();
+
+      await fresh.initialize({ learningGroup: 'binary-feedback', numQuestions: 3 });
+
+      const state = fresh.getPublicState();
+      expect(state).not.toBeNull();
+      expect(Object.keys(state).length).toBeGreaterThan(0);
+      expect(state.currentQuestion).toBeTruthy();
+      expect(state.currentQuestionIndex).toBe(0);
+    });
   });
 
   // -------------------------------------------------------------------

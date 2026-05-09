@@ -332,5 +332,62 @@ describe('FruitBeerEngine', () => {
       expect(state).toBeNull();
     });
   });
+
+  // Regression for Session 11c.5 Bug 2. The sockets/index.ts auto-advance
+  // path expects: a single human submits → advanceRound runs → currentWeek
+  // increments → getParticipantState reflects the new week. The client UI
+  // never observes auto-advance correctly if this engine-level invariant
+  // breaks (independently of the BE socket fix that re-broadcasts
+  // session_update). Bots are present as participants but don't submit
+  // through applyAction — engine's placeOrders falls back to lastOrderPlaced.
+  describe('auto-advance invariant after single human submission', () => {
+    it('reflects the new week in getParticipantState after one human submits and advanceRound runs', async () => {
+      const mockParticipants = [
+        { id: 'human', role: 'RETAILER', joined_at: new Date() },
+        { id: 'bot1', role: 'WHOLESALER', joined_at: new Date() },
+        { id: 'bot2', role: 'DISTRIBUTOR', joined_at: new Date() },
+        { id: 'bot3', role: 'MANUFACTURER', joined_at: new Date() },
+      ];
+      (prisma.sessionParticipant.findMany as jest.Mock).mockResolvedValue(mockParticipants);
+      (prisma.fruitBeerGameState.create as jest.Mock).mockResolvedValue({});
+      (prisma.gameSession.update as jest.Mock).mockResolvedValue({});
+      (prisma.playerDecision.create as jest.Mock).mockResolvedValue({});
+
+      const e = new FruitBeerEngine('auto-advance-session');
+      await e.initialize({
+        leadTime: 2,
+        initialInventory: 12,
+        holdingCost: 0.5,
+        stockoutCost: 1.0,
+        numWeeks: 5,
+        demandPattern: [4, 4, 4, 8, 8],
+      });
+
+      // Pre-advance: week 0
+      expect(e.getParticipantState('human').currentWeek).toBe(0);
+      expect(e.getParticipantState('human').hasPlacedOrder).toBe(false);
+
+      // Human submits — bots have not (and never will via applyAction)
+      const submitResult = await e.applyAction('human', { orderQuantity: 6 });
+      expect(submitResult.success).toBe(true);
+      expect(e.getParticipantState('human').hasPlacedOrder).toBe(true);
+
+      // advanceRound is what the auto-advance code path triggers once all
+      // non-bot decisions are recorded
+      const roundResult = await e.advanceRound();
+      expect(roundResult.roundNumber).toBe(1);
+      expect(roundResult.isGameComplete).toBe(false);
+
+      // Post-advance: week incremented and pendingOrders cleared
+      const postState = e.getParticipantState('human');
+      expect(postState.currentWeek).toBe(1);
+      expect(postState.hasPlacedOrder).toBe(false);
+
+      // Public state must also reflect the new week — the BE re-broadcasts
+      // this via session_update after advanceRound and the parent UI relies
+      // on it to merge into per-game UI state.
+      expect(e.getPublicState().currentWeek).toBe(1);
+    });
+  });
 });
 
