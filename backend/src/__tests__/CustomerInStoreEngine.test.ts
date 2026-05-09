@@ -92,6 +92,26 @@ describe('CustomerInStoreEngine', () => {
       expect(state.currentQuestion).toBeTruthy();
       expect(state.currentQuestionIndex).toBe(0);
     });
+
+    // Regression for Session 11c.5 follow-up. The /sessions/:id/start handler
+    // and the socket lazy-init both call engine.initialize once. If the DB
+    // persistence call inside saveGameState rejects (table missing, transient
+    // hiccup, schema drift), initialize must NOT propagate that failure —
+    // otherwise /start returns 500 and the lazy-init falls back to a
+    // placeholder publicState with no currentQuestion, leaving the UI stuck
+    // on the "Loading next question…" spinner after the warmup phase.
+    it('completes initialization even when DB persistence rejects', async () => {
+      (prisma.gameState.create as jest.Mock).mockRejectedValueOnce(
+        new Error('simulated DB outage')
+      );
+      const resilient = new CustomerInStoreEngine('db-outage-test');
+      await expect(
+        resilient.initialize({ learningGroup: 'binary-feedback', numQuestions: 2 })
+      ).resolves.toBeUndefined();
+      const state = resilient.getPublicState();
+      expect(state).not.toBeNull();
+      expect(state.currentQuestion).toBeTruthy();
+    });
   });
 
   // -------------------------------------------------------------------

@@ -625,12 +625,23 @@ export class CustomerInStoreEngine extends BaseGameEngine {
   // =====================================================================
 
   private async saveGameState(): Promise<void> {
-    await prisma.gameState.create({
-      data: {
-        session_id: this.sessionId,
-        round_number: this.state.currentQuestionIndex,
-        state_data: this.state as any,
-      },
-    });
+    // Best-effort persistence: this engine's authoritative state lives in
+    // memory (cached per-session by GameEngineFactory). DB snapshots are
+    // useful for post-session analytics but are not required for gameplay.
+    // Mirroring HRCompensationEngine: log warnings and continue rather than
+    // surfacing a transient DB error as a 500 on /sessions/:id/start, which
+    // would also propagate through the join_session lazy-init and leave the
+    // UI on a placeholder state with no currentQuestion populated.
+    try {
+      await prisma.gameState.create({
+        data: {
+          session_id: this.sessionId,
+          round_number: this.state.currentQuestionIndex,
+          state_data: this.state as any,
+        },
+      });
+    } catch (error) {
+      this.log(`Warning: Could not persist state to DB: ${error}`);
+    }
   }
 }
