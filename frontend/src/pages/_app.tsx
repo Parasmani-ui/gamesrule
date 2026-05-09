@@ -1,4 +1,5 @@
 import type { AppProps } from 'next/app';
+import Head from 'next/head';
 import { useEffect } from 'react';
 import { useAuthStore } from '../stores/authStore';
 import '../styles/globals.css';
@@ -10,6 +11,13 @@ export default function App({ Component, pageProps }: AppProps) {
     loadUser();
   }, [loadUser]);
 
-  return <Component {...pageProps} />;
+  return (
+    <>
+      <Head>
+        <title>Parasmani Skills - Interactive Business Simulations</title>
+      </Head>
+      <Component {...pageProps} />
+    </>
+  );
 }
 

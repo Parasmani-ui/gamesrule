@@ -30,7 +30,7 @@ const DIFFICULTY_BADGE: Record<CurrentQuestion['difficulty'], string> = {
  * Scenario-tailored wording. The engine rotates across 5 cover stories
  * (CustomerInStoreEngine.SCENARIOS) but every question is the same
  * pedagogical task — find the stock peak. Tailoring the prompt to the
- * cover story keeps the canonical Niranjan phrasing ("when are the most
+ * cover story keeps the canonical phrasing ("when are the most
  * customers in the store" / "when is the water level at its maximum")
  * instead of repeating the generic "stock" noun for all 10 questions.
  */

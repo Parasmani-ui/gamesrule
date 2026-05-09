@@ -37,7 +37,7 @@ async function seed() {
       create: {
         email: 'facilitator1@parasmani.local',
         password_hash: hashedPassword,
-        full_name: 'Prof. Viral Bhatt',
+        full_name: 'Parasmani Facilitator 1',
         role: 'FACILITATOR',
         email_verified: true,
       },
@@ -49,7 +49,7 @@ async function seed() {
       create: {
         email: 'facilitator2@parasmani.local',
         password_hash: hashedPassword,
-        full_name: 'Prof. Vasanthi Srinivasan',
+        full_name: 'Parasmani Facilitator 2',
         role: 'FACILITATOR',
         email_verified: true,
       },
