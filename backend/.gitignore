@@ -2,8 +2,7 @@
 .env
 .env.local
 .env.*.local
-.env.example
-.env.docker.example
+# .env.example and .env.docker.example are templates — keep tracked.
 
 # Dependencies
 node_modules/

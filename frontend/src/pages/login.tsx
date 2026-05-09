@@ -31,7 +31,7 @@ export default function Login() {
     <div className="min-h-screen bg-gradient-to-br from-primary-50 to-purple-50 flex items-center justify-center px-4">
       <div className="max-w-md w-full space-y-8 bg-white p-8 rounded-lg shadow-xl">
         <div className="text-center">
-          <h2 className="text-3xl font-bold text-gray-900">Welcome Back!</h2>
+          <h2 className="text-3xl font-bold text-gray-900">Welcome </h2>
           <p className="mt-2 text-gray-600">Sign in to your account</p>
         </div>
 
@@ -98,14 +98,14 @@ export default function Login() {
           </Link>
         </div>
 
-        <div className="mt-6 border-t border-gray-200 pt-6">
+        {/* <div className="mt-6 border-t border-gray-200 pt-6">
           <p className="text-xs text-gray-500 text-center">
             Test credentials:<br />
             <code className="bg-gray-100 px-2 py-1 rounded">student@parasmani.local / password123</code>
             <br />
             <code className="bg-gray-100 px-2 py-1 rounded">facilitator@parasmani.local / password123</code>
           </p>
-        </div>
+        </div> */}
       </div>
     </div>
   );
