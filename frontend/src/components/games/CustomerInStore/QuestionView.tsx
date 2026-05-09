@@ -26,6 +26,83 @@ const DIFFICULTY_BADGE: Record<CurrentQuestion['difficulty'], string> = {
   hard: 'bg-red-500/15 text-red-300 border-red-500/40',
 };
 
+/**
+ * Scenario-tailored wording. The engine rotates across 5 cover stories
+ * (CustomerInStoreEngine.SCENARIOS) but every question is the same
+ * pedagogical task — find the stock peak. Tailoring the prompt to the
+ * cover story keeps the canonical Niranjan phrasing ("when are the most
+ * customers in the store" / "when is the water level at its maximum")
+ * instead of repeating the generic "stock" noun for all 10 questions.
+ */
+interface ScenarioCopy {
+  inflowLabel: string;
+  outflowLabel: string;
+  stockNoun: string;
+  initialClause: string;
+  questionLine: string;
+}
+
+const SCENARIO_COPY: ScenarioCopy[] = [
+  {
+    // Customers entering and leaving a store
+    inflowLabel: 'arrivals',
+    outflowLabel: 'departures',
+    stockNoun: 'customers in the store',
+    initialClause: 'There are 10 customers in the store at the start.',
+    questionLine: 'At which minute are there the most customers in the store?',
+  },
+  {
+    // Water flowing into and out of a reservoir
+    inflowLabel: 'water inflow',
+    outflowLabel: 'water outflow',
+    stockNoun: 'water level',
+    initialClause: 'The reservoir starts at a level of 10 units.',
+    questionLine: 'At which minute is the water level at its maximum?',
+  },
+  {
+    // Inventory arriving and being sold
+    inflowLabel: 'goods arriving',
+    outflowLabel: 'goods sold',
+    stockNoun: 'inventory on hand',
+    initialClause: 'Inventory on hand is 10 units at the start.',
+    questionLine: 'At which minute is inventory on hand at its maximum?',
+  },
+  {
+    // Patients admitted to and discharged from a hospital
+    inflowLabel: 'admissions',
+    outflowLabel: 'discharges',
+    stockNoun: 'patients in the hospital',
+    initialClause: 'There are 10 patients in the hospital at the start.',
+    questionLine: 'At which minute are there the most patients in the hospital?',
+  },
+  {
+    // Money deposited to and withdrawn from an account
+    inflowLabel: 'deposits',
+    outflowLabel: 'withdrawals',
+    stockNoun: 'account balance',
+    initialClause: 'The account starts with a balance of 10 units.',
+    questionLine: 'At which minute is the account balance at its maximum?',
+  },
+];
+
+const GENERIC_COPY: ScenarioCopy = {
+  inflowLabel: 'inflow',
+  outflowLabel: 'outflow',
+  stockNoun: 'stock',
+  initialClause: 'The system starts at a stock of 10.',
+  questionLine: 'At which minute is the stock at its maximum?',
+};
+
+function copyForScenario(scenario: string): ScenarioCopy {
+  const s = scenario.toLowerCase();
+  if (s.includes('store') || s.includes('customer')) return SCENARIO_COPY[0];
+  if (s.includes('reservoir') || s.includes('water')) return SCENARIO_COPY[1];
+  if (s.includes('inventory') || s.includes('warehouse') || s.includes('sold')) return SCENARIO_COPY[2];
+  if (s.includes('hospital') || s.includes('patient')) return SCENARIO_COPY[3];
+  if (s.includes('account') || s.includes('money') || s.includes('deposit')) return SCENARIO_COPY[4];
+  return GENERIC_COPY;
+}
+
 export function QuestionView({
   question,
   questionIndex,
@@ -45,6 +122,7 @@ export function QuestionView({
   }, [question.id, questionIndex]);
 
   const minuteCount = question.inflowPattern.length;
+  const copy = useMemo(() => copyForScenario(question.scenario), [question.scenario]);
 
   const parsedAnswer = useMemo(() => {
     if (answer === '') return null;
@@ -87,10 +165,12 @@ export function QuestionView({
       </div>
 
       <p className="text-sm text-slate-300 leading-relaxed">
-        The graph shows the rate of <span className="text-emerald-300 font-semibold">inflow</span>{' '}
-        and the rate of <span className="text-amber-300 font-semibold">outflow</span> for each
-        minute. The system starts at a stock of 10. <strong>At which minute is the stock at
-        its maximum?</strong>
+        The graph shows the rate of{' '}
+        <span className="text-emerald-300 font-semibold">{copy.inflowLabel}</span>
+        {' '}and the rate of{' '}
+        <span className="text-amber-300 font-semibold">{copy.outflowLabel}</span>{' '}
+        for each minute. {copy.initialClause}{' '}
+        <strong>{copy.questionLine}</strong>
       </p>
 
       <GraphChart inflow={question.inflowPattern} outflow={question.outflowPattern} />
