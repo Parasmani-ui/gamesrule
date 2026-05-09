@@ -267,7 +267,7 @@ export class DualSourceEngine extends BaseGameEngine {
       message: `Week ${this.state.currentWeek - 1} completed`,
       roundNumber: this.state.currentWeek,
       isComplete: this.state.isComplete,
-      data: weekResult,
+      summary: weekResult,
     };
   }
 
@@ -449,7 +449,7 @@ export class DualSourceEngine extends BaseGameEngine {
   }
 
   private calculateAverageInventory(): number {
-    if (this.state.weeklyHistory.length === 0) return this.state.initialInventory;
+    if (this.state.weeklyHistory.length === 0) return this.state.config.initialInventory;
     
     const totalInventory = this.state.weeklyHistory.reduce((sum, w) => sum + w.inventory, 0);
     return Math.round(totalInventory / this.state.weeklyHistory.length);

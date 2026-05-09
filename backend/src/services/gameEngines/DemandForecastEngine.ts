@@ -179,7 +179,7 @@ export class DemandForecastEngine extends BaseGameEngine {
         cumulativeMetrics: this.state.cumulativeMetrics,
         score: this.state.score.toFixed(2),
         isComplete: this.state.isComplete,
-        optimalMethod: this.config.revealMethod ? optimalMethod : undefined,
+        optimalMethod: this.state.config.revealMethod ? optimalMethod : undefined,
       },
     };
   }

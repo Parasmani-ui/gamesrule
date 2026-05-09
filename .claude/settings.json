@@ -1,0 +1,39 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git -C '/c/Users/Vikash Lanjhikar/Desktop/games' commit -m ' *)",
+      "Bash(wc -l \"C:/Users/Vikash Lanjhikar/AppData/Local/Temp/old_session_page.tsx\")",
+      "Read(//c/Users/Vikash Lanjhikar/AppData/Local/Temp/**)",
+      "Bash(git -C \"c:/Users/Vikash Lanjhikar/Desktop/games\" log --all --oneline -- frontend/src/pages/sessions/\\\\[sessionId\\\\].tsx)",
+      "Bash(git -C \"c:/Users/Vikash Lanjhikar/Desktop/games\" show c99c375:frontend/src/pages/sessions/\\\\[sessionId\\\\].tsx > \"C:/Users/Vikash Lanjhikar/AppData/Local/Temp/very_old_session.tsx\" 2>&1 ; wc -l \"C:/Users/Vikash Lanjhikar/AppData/Local/Temp/very_old_session.tsx\")",
+      "Bash(npm test *)",
+      "Bash(npm run *)",
+      "Bash(git ls-tree *)",
+      "Bash(git add *)",
+      "Read(//mnt/c/Users/Vikash Lanjhikar/Desktop/games/**)",
+      "Bash(npx jest *)",
+      "PowerShell(npx jest CustomerInStoreEngine.test.ts --testPathIgnorePatterns=node_modules 2>&1)",
+      "PowerShell(npx jest CustomerInStoreEngine.test.ts 2>&1)",
+      "Bash(cd \"/c/Users/Vikash Lanjhikar/Desktop/games\" && wc -l backend/src/services/gameEngines/CustomerInStoreEngine.ts backend/src/__tests__/CustomerInStoreEngine.test.ts)",
+      "Read(//c/c/Users/Vikash Lanjhikar/Desktop/games/backend/src/services/gameEngines/**)",
+      "Bash(git commit *)",
+      "Bash(npx tsc *)",
+      "Bash(cd \"/c/Users/Vikash Lanjhikar/Desktop/games/backend\" && wc -l src/services/gameEngines/EVGambitEngine.ts src/__tests__/EVGambitEngine.test.ts)",
+      "Read(//c/c/Users/Vikash Lanjhikar/Desktop/games/backend/src/__tests__/**)",
+      "Bash(npx tsx *)",
+      "Bash(git -C \"c:\\\\Users\\\\Vikash Lanjhikar\\\\Desktop\\\\games\" add audits/DEFECT_DETECTIVES_AUDIT.md)",
+      "Bash(git -C \"c:\\\\Users\\\\Vikash Lanjhikar\\\\Desktop\\\\games\" commit -m \"audits: Defect Detectives audit\")",
+      "Bash(git -C \"c:\\\\Users\\\\Vikash Lanjhikar\\\\Desktop\\\\games\" log --oneline -5 -- audits/)",
+      "Bash(git -C \"c:\\\\Users\\\\Vikash Lanjhikar\\\\Desktop\\\\games\" check-ignore -v audits/DEFECT_DETECTIVES_AUDIT.md)",
+      "Bash(git -C \"c:\\\\Users\\\\Vikash Lanjhikar\\\\Desktop\\\\games\" ls-files audits/)",
+      "Bash(awk 'END{print NR}' \"c:/Users/Vikash Lanjhikar/Desktop/games/backend/src/services/gameEngines/DefectDetectivesEngine.ts\")",
+      "Bash(awk 'END{print NR}' \"c:/Users/Vikash Lanjhikar/Desktop/games/backend/src/services/gameEngines/DefectDetectivesEngine.ts\" \"c:/Users/Vikash Lanjhikar/Desktop/games/backend/src/__tests__/DefectDetectivesEngine.test.ts\")",
+      "Bash(awk 'END{print FILENAME\": \"NR}' \"c:/Users/Vikash Lanjhikar/Desktop/games/backend/src/services/gameEngines/DefectDetectivesEngine.ts\")",
+      "Bash(awk 'END{print FILENAME\": \"NR}' \"c:/Users/Vikash Lanjhikar/Desktop/games/backend/src/__tests__/DefectDetectivesEngine.test.ts\")",
+      "Bash(git check-ignore *)"
+    ],
+    "additionalDirectories": [
+      "C:\\Users\\Vikash Lanjhikar\\AppData\\Local\\Temp"
+    ]
+  }
+}

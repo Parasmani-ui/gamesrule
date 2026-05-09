@@ -8,6 +8,7 @@ node_modules/
 .env.*.local
 backend/.env
 frontend/.env.local
+# (.env.example and .env.docker.example are templates and ARE committed.)
 
 # Build outputs
 dist/

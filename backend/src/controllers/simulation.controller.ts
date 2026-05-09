@@ -33,7 +33,7 @@ export class SimulationController {
       const { slug } = req.params;
 
       let simulation;
-      let activeSessions = [];
+      let activeSessions: any[] = [];
 
       try {
         simulation = await prisma.simulation.findUnique({
