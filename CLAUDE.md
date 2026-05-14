@@ -226,7 +226,7 @@ non-bot participants submit, with a `facilitator_advance_round` manual override.
 | 5 | Defect Detectives | `defect-detectives` | 967 | ✅ (36) | ✅ | **Phase 1 complete — engine + UI shipped 2026-05-08.** Session 9 backend Option B + Session 10 UI landed same day. 14 UI files under `components/games/DefectDetectives/`: scenario header, dataset explorer, 7 QC tool panel, 7 typed chart components (Pareto/Histogram/Control Chart/Scatter/Check Sheet/Fishbone/Flowchart), inspection decision UI, four-bucket cost-of-quality panel, and bias-reveal final screen. Pattern E enforced — `ToolDescriptor` omits `reduction` to match the engine's stripped publicTools(); each tool result is individually typed (no `any`). Bias narrative hidden until GameComplete. |
 | 6 | Order Ops | `order-ops` | 501 | ❌ | ❌ | Built, not in Phase 1. Likely duration/phase drift. |
 | 7 | Dual Source Dilemma | `dual-source-dilemma` | 477 | ❌ | ❌ | Built, not in Phase 1. Generic vs Surat/Bangladesh framing. |
-| 8 | Demand Forecast Challenge | `demand-forecast-challenge` | 1129 | ✅ (67) | ❌ | **Phase 1.5 backend complete (Sessions DF-2a + DF-2b, 2026-05-14).** DF-2a: six method helpers, seeded RNG, validation, async/sync split, content externalisation. DF-2b: pattern-inference action (Pattern A — pattern hidden from publicState; revealed only post-isComplete via gated `displayName` + sanitization-boundary comment); three-component scoring (inferenceScore + methodAppropriatenessScore + accuracyScore; weighted blend per scenario's `scoringWeights`); per-participant state map keyed off `hash(sessionId:participantId:scenarioId)` (mirrors EV Gambit Session 6); `optimalMethodChoiceCount` per-period counter. **DF-3a/b** UI pending; engine is feature-complete. |
+| 8 | Demand Forecast Challenge | `demand-forecast-challenge` | 1129 | ✅ (67) | partial | **Phase 1.5 — backend complete, UI input side complete, DF-3b remaining.** DF-2a/DF-2b shipped six method helpers, seeded RNG, pattern-inference action (Pattern A — pattern hidden from publicState), three-component scoring (inference + methodAppropriateness + accuracy), per-participant state map. **DF-3a (2026-05-14)** shipped 7 UI files under `components/games/DemandForecast/`: `types.ts` (Pattern E — narrowed `DemandForecastPublicState` omits `truePattern`/`optimalMethod`/`recommendedMethods`/`fullDemandData`; reveals gated on `isComplete`), `index.tsx` (phase dispatcher + local `action_result` subscription), `ScenarioHeader`, `DemandHistoryChart` (Recharts line chart + warmup reference line), `PatternInference` (four-card phase-1 picker), `MethodPicker` (dropdown + dynamic per-method param form for all 6 methods, weight sum-to-1 ±tol validation), `MethodHelpText` (generic method descriptions, never analyses the visible series). Client never computes a forecast number — engine computes from `{method, params}`. DF-3b ships the feedback side: per-period results, metrics charts, final scorecard. |
 | 9 | Customer In A Store | `customer-in-store` | 636 | ✅ (31) | ✅ | **Phase 1 complete** (2026-05-07). 7 substantive defects fixed (intervention modes were stubs, off-by-one in correctAnswer, integrity gates added, question generator de-degenerated). 6 UI files under `components/games/CustomerInStore/`. |
 | 10 | Onion Dilemma | `onion-dilemma` | 135 | ❌ | ❌ | **Skeleton.** Not in Phase 1. |
 | 11 | TOC Factory | `toc-factory` | 124 | ❌ | ❌ | **Skeleton.** Not in Phase 1. |
@@ -603,9 +603,12 @@ at least one — they are systematic, not one-off.
 
 ---
 
-*Last updated: 2026-05-14 (post-Session-DF-2b: Demand Forecast Challenge
-pedagogy layer — pattern-inference action, pattern hiding, three-component
-scoring, per-participant state. Backend feature-complete. 227 backend
-tests green; Phase 1.5 backend done; DF-3a/b UI next). When making
-non-trivial structural changes to engine architecture, schema, or
-workflow, update this file in the same commit.*
+*Last updated: 2026-05-14 (post-Session-DF-3a: Demand Forecast Challenge
+UI input side — 7 components under `components/games/DemandForecast/`
+covering pattern inference, demand-history chart, method picker with
+dynamic param forms for all 6 methods, and Pattern E type narrowing on
+the client `PublicState`. Engine + input UI complete; DF-3b feedback
+side and scorecard remain. 227 backend tests green; frontend
+type-check + production build pass clean). When making non-trivial
+structural changes to engine architecture, schema, or workflow, update
+this file in the same commit.*

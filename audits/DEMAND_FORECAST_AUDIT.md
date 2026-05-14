@@ -1,6 +1,53 @@
 # Demand Forecast Challenge — Engine Audit
 
-**Status: Session DF-2b complete (pedagogy layer landed 2026-05-14).**
+**Status: Session DF-3a complete (UI input side landed 2026-05-14).**
+
+What landed in DF-3a (UI scaffold + input side):
+- 7 components under `frontend/src/components/games/DemandForecast/`:
+  `types.ts`, `index.tsx`, `ScenarioHeader.tsx`, `DemandHistoryChart.tsx`
+  (Recharts line chart + warmup reference line), `PatternInference.tsx`
+  (four-card phase-1 picker), `MethodPicker.tsx` (method dropdown +
+  dynamic per-method param form for all 6 methods), `MethodHelpText.tsx`
+  (generic method descriptions; no current-data recommendations).
+- **Pattern E enforcement** — client `DemandForecastPublicState`
+  (`types.ts:118`) narrows to exactly the engine's stripped shape: no
+  `truePattern`, no `optimalMethod`, no `recommendedMethods`, no
+  `fullDemandData`. Reading those mid-game is a compile error. Reveal
+  fields live on `DemandForecastParticipantState` as optional fields
+  gated behind `isComplete` and consumed only by DF-3b.
+- **No client-side forecast computation.** `MethodPicker.handleSubmit`
+  sends `{ method, params }`; the engine computes the forecast. The
+  component validates params against the engine's schema (n bounds,
+  weight sum-to-1 ±tol, alpha/beta 0–1) so submit is disabled when
+  invalid, but does not derive a forecast number.
+- **MethodHelpText is pedagogy-safe** — describes what each method
+  *does* in plain language, never analyses the visible series or
+  recommends a method for the current data.
+- Local socket subscription on `action_result` in `index.tsx` surfaces
+  submission errors immediately (Fruit Beer / Customer In Store pattern).
+- Slug `demand-forecast-challenge` registered in
+  `frontend/src/components/games/index.ts:22`. Slug matches
+  `simulations-data.json` row 11 and `factory.ts:59`.
+- Sim-isolation: only files touched outside `DemandForecast/` are the
+  one slug-map entry. No edits to `[sessionId].tsx`, no engine edits,
+  no other-sim edits.
+- `npm run type-check` clean. `npm run build` succeeds (170 kB for
+  `/sessions/[sessionId]`).
+
+What remains for **DF-3b** (final session):
+- Per-period feedback panel (forecast vs actual, error, cumulative
+  metrics update).
+- Cumulative metrics charts (MAD / MAPE / Tracking Signal over time).
+- Final scorecard with Pattern A reveals: inference score,
+  method-appropriateness score, accuracy score, weighted final score,
+  true pattern reveal, optimal method, recommended methods, full
+  demand series, per-forecast `usedRecommendedMethod` flags.
+- Manual smoke test alongside the deferred Phase 1 Session 11b
+  re-run.
+
+---
+
+**Earlier status: Session DF-2b complete (pedagogy layer landed 2026-05-14).**
 
 What landed in DF-2b:
 - **PART A — Pattern-inference action.** New phase
