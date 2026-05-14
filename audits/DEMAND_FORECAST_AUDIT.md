@@ -1,5 +1,62 @@
 # Demand Forecast Challenge — Engine Audit
 
+**Status: Session DF-2a complete (foundation rewrite landed 2026-05-14).**
+
+What landed in DF-2a:
+- Six method helpers: Naive, MA(n), WMA(weights), ES(α), Holt's
+  Double ES(α,β), Linear Regression (full-cumulative). All six
+  exercised by handcrafted-input tests.
+- New action contract: `{ method, params }`. Engine computes the
+  forecast; client never supplies a forecast number. Closes audit
+  D1, D2 (vapourware methods + decorative method label).
+- Method-enum + per-param schema validation. Closes audit D4
+  (Pattern B — forged method name).
+- Forecast NaN/Infinity / hard-cap guards. Closes audit D5
+  (Pattern B — forecast NaN/oversized poisoning).
+- async/sync split (`computeMetricsSync` + async wrapper). Closes
+  audit C1 (Pattern D — un-awaited Promise).
+- MAPE divide-by-zero now skip-period with `mapeExcludedCount`
+  tracking. Closes audit D7.
+- Seeded mulberry32 RNG keyed by `sessionId:scenarioId`. Closes
+  audit D8 (non-reproducibility).
+- `warmupPeriods >= numPeriods` rejected at init. Closes audit
+  D10 (latent crash on faculty-misconfigured short scenarios).
+- Content externalised to
+  `backend/src/services/gameEngines/data/demandForecast/`:
+  - `scenarios.json` — 4 scenarios (default-stationary,
+    trending-quarterly-retail, seasonal-quarterly with the D6 fix
+    sinePeriod=4, random-noise) — exceeds the prompt's two-scenario
+    minimum.
+  - `methods.json` — canonical 6 methods + parameter schemas.
+- 40 backend tests, all green.
+- `simulations-data.json` row updated: duration 35 min,
+  description rewritten to mention 6 methods + MAPE/TS, tags
+  bumped with `phase-1.5`, author set to `Parasmani Skills
+  Faculty Team`.
+
+What remains for **DF-2b** (next session):
+- Pattern-inference action (the audit M1 / pedagogy hole — student
+  identifies pattern from data shape before forecasting begins).
+- Per-participant state map (multi-tenant; D15 + audit M4).
+- Hide demand pattern from `getPublicState` (Pattern A — D11/D14).
+- Hide `optimalMethod` until `isComplete`.
+- `optimalMethodUsed` → counter (D17 — currently sticky-true).
+- Method-appropriateness scoring component (audit M9).
+- Per-period "you would have scored X with method Y" benchmark
+  (audit M6).
+
+What remains for **DF-3a / DF-3b**: UI under
+`frontend/src/components/games/DemandForecast/`.
+
+The original audit body below is preserved verbatim as the
+provenance trail for the rewrite. Defects already closed are
+called out in the DF-2a list above; defects remaining open belong
+to DF-2b scope.
+
+---
+
+# Original audit (Session DF-1)
+
 **Status: Audit only.** No code modified. Session DF-1 — re-evaluating
 the 2026-05-04 "drop from Phase 1" decision (CLAUDE.md §11 Q1) on the
 basis that the source-of-truth is operations-management curriculum

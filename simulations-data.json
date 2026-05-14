@@ -204,20 +204,20 @@
     "slug": "demand-forecast-challenge",
     "name": "Demand Forecast Challenge",
     "type": "forecasting",
-    "author": "Parasmani Skills Team",
-    "description": "Time-series forecasting simulation. Apply various forecasting methods (moving average, exponential smoothing, regression) and compete to achieve the lowest forecast error.",
+    "author": "Parasmani Skills Faculty Team",
+    "description": "Operations-management forecasting drill (Stevenson Ch. 3 / Heizer Ch. 4 / Chase & Jacobs Ch. 17–18). Across 20 periods (5 warmup + 15 forecasted), choose from six canonical methods — Naive, Moving Average, Weighted Moving Average, Exponential Smoothing, Holt's Double ES, Linear Regression — and the engine computes your forecast and grades it on MAD, MSE, MAPE, and Tracking Signal. Phase 1.5 foundation; pattern-inference action and method-appropriateness scoring land in DF-2b.",
     "duration_minutes": 35,
     "difficulty_level": "intermediate",
     "learning_objectives": [
-      "Apply forecasting techniques",
-      "Understand forecast accuracy metrics",
-      "Handle seasonal patterns",
-      "Compare method performance"
+      "Apply six canonical time-series forecasting methods to real demand series",
+      "Choose method parameters (n, α, β, weights) and reason about their tradeoffs",
+      "Interpret MAD, MSE, MAPE, and Tracking Signal as headline accuracy metrics",
+      "Compare method performance across stationary, trending, seasonal, and random patterns"
     ],
     "max_players": 1,
     "min_players": 1,
     "supports_bots": false,
-    "tags": ["forecasting", "analytics", "time-series", "single-player"]
+    "tags": ["forecasting", "analytics", "time-series", "operations-management", "single-player", "phase-1.5"]
   }
 ]
 

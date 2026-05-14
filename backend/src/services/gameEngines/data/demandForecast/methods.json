@@ -1,0 +1,90 @@
+{
+  "canonicalMethods": [
+    "naive",
+    "moving-average",
+    "weighted-moving-average",
+    "exponential-smoothing",
+    "holts-double-es",
+    "linear-regression"
+  ],
+  "methods": {
+    "naive": {
+      "id": "naive",
+      "label": "Naive Forecast",
+      "formula": "F(t+1) = A(t)",
+      "description": "Forecast the next period as equal to the most recent observation. Best for white-noise / no-trend data; baseline against which all others are judged.",
+      "params": {}
+    },
+    "moving-average": {
+      "id": "moving-average",
+      "label": "Moving Average",
+      "formula": "F(t+1) = mean(A(t-n+1), …, A(t))",
+      "description": "Average of the last n observations. Smooths short-term noise; lags trends.",
+      "params": {
+        "n": {
+          "type": "integer",
+          "min": 2,
+          "max": 10,
+          "description": "Number of most-recent periods to average."
+        }
+      }
+    },
+    "weighted-moving-average": {
+      "id": "weighted-moving-average",
+      "label": "Weighted Moving Average",
+      "formula": "F(t+1) = Σ wᵢ · A(t-i),   Σwᵢ = 1",
+      "description": "Like Moving Average but with explicit weights summing to 1 (most-recent first). Lets the forecaster emphasise recent periods.",
+      "params": {
+        "weights": {
+          "type": "number-array",
+          "minLength": 2,
+          "maxLength": 10,
+          "sumTo": 1.0,
+          "sumTolerance": 0.001,
+          "description": "Array of weights; weights[0] applies to the most-recent observation. Must sum to 1.0 within ±0.001."
+        }
+      }
+    },
+    "exponential-smoothing": {
+      "id": "exponential-smoothing",
+      "label": "Exponential Smoothing",
+      "formula": "F(t+1) = α·A(t) + (1-α)·F(t)",
+      "description": "Recursive weighted average with smoothing constant α. Higher α tracks recent changes faster; lower α produces a smoother forecast.",
+      "params": {
+        "alpha": {
+          "type": "number",
+          "min": 0.0,
+          "max": 1.0,
+          "description": "Smoothing constant 0–1."
+        }
+      }
+    },
+    "holts-double-es": {
+      "id": "holts-double-es",
+      "label": "Holt's Double Exponential Smoothing",
+      "formula": "L(t)=α·A(t)+(1-α)(L(t-1)+T(t-1));  T(t)=β·(L(t)-L(t-1))+(1-β)·T(t-1);  F(t+1)=L(t)+T(t)",
+      "description": "Two smoothing constants — α for the level, β for the trend — so the method captures linear trend.",
+      "params": {
+        "alpha": {
+          "type": "number",
+          "min": 0.0,
+          "max": 1.0,
+          "description": "Level smoothing constant 0–1."
+        },
+        "beta": {
+          "type": "number",
+          "min": 0.0,
+          "max": 1.0,
+          "description": "Trend smoothing constant 0–1."
+        }
+      }
+    },
+    "linear-regression": {
+      "id": "linear-regression",
+      "label": "Linear Regression",
+      "formula": "F(t) = a + b·t,   b = Σ(t-t̄)(A-Ā)/Σ(t-t̄)²,   a = Ā - b·t̄",
+      "description": "Fit a least-squares line over all available history (full-cumulative). Best for clean linear trend; extrapolates linearly. A windowed variant is on the DF-2b backlog.",
+      "params": {}
+    }
+  }
+}
