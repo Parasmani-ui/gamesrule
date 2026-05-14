@@ -226,7 +226,7 @@ non-bot participants submit, with a `facilitator_advance_round` manual override.
 | 5 | Defect Detectives | `defect-detectives` | 967 | ✅ (36) | ✅ | **Phase 1 complete — engine + UI shipped 2026-05-08.** Session 9 backend Option B + Session 10 UI landed same day. 14 UI files under `components/games/DefectDetectives/`: scenario header, dataset explorer, 7 QC tool panel, 7 typed chart components (Pareto/Histogram/Control Chart/Scatter/Check Sheet/Fishbone/Flowchart), inspection decision UI, four-bucket cost-of-quality panel, and bias-reveal final screen. Pattern E enforced — `ToolDescriptor` omits `reduction` to match the engine's stripped publicTools(); each tool result is individually typed (no `any`). Bias narrative hidden until GameComplete. |
 | 6 | Order Ops | `order-ops` | 501 | ❌ | ❌ | Built, not in Phase 1. Likely duration/phase drift. |
 | 7 | Dual Source Dilemma | `dual-source-dilemma` | 477 | ❌ | ❌ | Built, not in Phase 1. Generic vs Surat/Bangladesh framing. |
-| 8 | Demand Forecast Challenge | `demand-forecast-challenge` | 855 | ✅ (40) | ❌ | **Phase 1.5 backend foundation complete (Session DF-2a, 2026-05-14).** Full rewrite per `audits/DEMAND_FORECAST_AUDIT.md`. Six method helpers (Naive, MA, WMA, ES, Holt's, Linear Regression) computed engine-side from `{method, params}`; method-enum + per-param validation; seeded RNG (mulberry32, mirrors Defect Detectives); MAPE skip-period; async/sync split; content externalised to `data/demandForecast/` (4 scenarios + 6 methods). **DF-2b pending** (pattern inference, multi-tenant per-participant state, Pattern A state hiding, scoring rework); **DF-3a/b** UI pending. |
+| 8 | Demand Forecast Challenge | `demand-forecast-challenge` | 1129 | ✅ (67) | ❌ | **Phase 1.5 backend complete (Sessions DF-2a + DF-2b, 2026-05-14).** DF-2a: six method helpers, seeded RNG, validation, async/sync split, content externalisation. DF-2b: pattern-inference action (Pattern A — pattern hidden from publicState; revealed only post-isComplete via gated `displayName` + sanitization-boundary comment); three-component scoring (inferenceScore + methodAppropriatenessScore + accuracyScore; weighted blend per scenario's `scoringWeights`); per-participant state map keyed off `hash(sessionId:participantId:scenarioId)` (mirrors EV Gambit Session 6); `optimalMethodChoiceCount` per-period counter. **DF-3a/b** UI pending; engine is feature-complete. |
 | 9 | Customer In A Store | `customer-in-store` | 636 | ✅ (31) | ✅ | **Phase 1 complete** (2026-05-07). 7 substantive defects fixed (intervention modes were stubs, off-by-one in correctAnswer, integrity gates added, question generator de-degenerated). 6 UI files under `components/games/CustomerInStore/`. |
 | 10 | Onion Dilemma | `onion-dilemma` | 135 | ❌ | ❌ | **Skeleton.** Not in Phase 1. |
 | 11 | TOC Factory | `toc-factory` | 124 | ❌ | ❌ | **Skeleton.** Not in Phase 1. |
@@ -388,10 +388,12 @@ Don't add anything to the schema unless you've exhausted JSON-column options.
    verdict per audit `audits/DEMAND_FORECAST_AUDIT.md` — the audit
    established that the source-of-truth is operations-management
    curriculum (Stevenson Ch. 3 / Heizer Ch. 4 / Chase & Jacobs Ch. 17–18),
-   not a missing msgames spec. Sessions: DF-2a (foundation, this commit
-   2026-05-14), DF-2b (pattern inference + multi-tenant + integrity),
-   DF-3a (UI scaffold + history chart + method picker), DF-3b (UI
-   feedback panel + scorecard). DF-2a complete in this commit.
+   not a missing msgames spec. Sessions: **DF-2a (foundation — landed
+   2026-05-14)**, **DF-2b (pedagogy layer — landed 2026-05-14)**, DF-3a
+   (UI scaffold + history chart + method picker — pending), DF-3b (UI
+   feedback panel + scorecard — pending). Backend is feature-complete;
+   the auto-advance dormancy in `sockets/index.ts` was verified for
+   per-participant DF-2b — no cross-cutting socket change required.
 2. **`pages/sessions/[sessionId].tsx` decomposition strategy.** ✅ **Resolved
    2026-05-05.** Decomposed upfront into a slug→component dispatcher. The page
    now keeps only auth, session load/join, socket lifecycle, and lobby UI; all
@@ -453,6 +455,15 @@ Don't add anything to the schema unless you've exhausted JSON-column options.
    severity-critical defects (Fruit Beer's bullwhip = 1.0 hardcoded;
    Customer In Store's off-by-one in correctAnswer; EV Gambit's force
    double-count). Audit before trusting.
+8. **`audits/` is in `.gitignore` but individual files inside are
+   tracked.** Surfaced DF-2a (2026-05-14): adding a new audit doc with
+   `git add audits/NEW_AUDIT.md` fails silently (no error; the file
+   just doesn't stage) because the directory is gitignored. Already-
+   tracked audit files still show as modified via `git status` and
+   `git diff`, but creating a new one requires `git add -f
+   audits/NEW_AUDIT.md`. **Always check `git status` after staging an
+   audit doc** — if it doesn't appear under "Changes to be committed,"
+   re-run with `-f`.
 
 ---
 
@@ -592,9 +603,9 @@ at least one — they are systematic, not one-off.
 
 ---
 
-*Last updated: 2026-05-14 (post-Session-DF-2a: Demand Forecast Challenge
-backend foundation rewrite — six method helpers, seeded RNG, input
-validation, async/sync split, content externalisation. 200 backend tests
-green; Phase 1.5 in flight; DF-2b next). When making non-trivial structural
-changes to engine architecture, schema, or workflow, update this file in
-the same commit.*
+*Last updated: 2026-05-14 (post-Session-DF-2b: Demand Forecast Challenge
+pedagogy layer — pattern-inference action, pattern hiding, three-component
+scoring, per-participant state. Backend feature-complete. 227 backend
+tests green; Phase 1.5 backend done; DF-3a/b UI next). When making
+non-trivial structural changes to engine architecture, schema, or
+workflow, update this file in the same commit.*

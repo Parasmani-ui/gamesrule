@@ -1,0 +1,32 @@
+{
+  "_about": "Pattern → method appropriateness mapping + inference partial-credit matrix. Loaded by DemandForecastEngine.computePartScores().",
+
+  "patterns": {
+    "stationary": {
+      "recommended": ["naive", "moving-average", "exponential-smoothing"],
+      "rationale": "Flat-on-average data favours short-memory smoothers. Naive is the pedagogical baseline; MA and ES smooth white-noise without lag."
+    },
+    "trending": {
+      "recommended": ["holts-double-es", "linear-regression"],
+      "rationale": "Both methods explicitly model a linear-trend component. MA / ES will systematically under-forecast a rising series."
+    },
+    "seasonal": {
+      "recommended": ["weighted-moving-average"],
+      "rationale": "True seasonal forecasting needs Holt-Winters or classical decomposition (NOT in the canonical 6 — audit D3). WMA with weights timed to the season is the best the canonical 6 can do; that is the documented limitation for this sim.",
+      "limitation": "No Holt-Winters in the canonical 6 — DF-2a kept the method set strict; Phase 2 may extend."
+    },
+    "random": {
+      "recommended": ["naive", "moving-average"],
+      "rationale": "Pure white noise rewards minimum-effort methods. Sophisticated smoothers overfit; trend models hallucinate slope where there is none."
+    }
+  },
+
+  "_about_inferencePartialCredit": "matrix[guess][truth] → 0–100. Same pattern = 100; broad-category match (both flat-on-average; both non-flat) = 60; unrelated = 30; clear contradiction (random vs trending/seasonal) = 0.",
+
+  "inferencePartialCredit": {
+    "stationary": { "stationary": 100, "trending": 30, "seasonal": 30, "random": 60 },
+    "trending":   { "stationary": 30,  "trending": 100, "seasonal": 60, "random": 0 },
+    "seasonal":   { "stationary": 30,  "trending": 60,  "seasonal": 100, "random": 0 },
+    "random":     { "stationary": 60,  "trending": 0,   "seasonal": 0,  "random": 100 }
+  }
+}

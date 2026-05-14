@@ -1,6 +1,65 @@
 # Demand Forecast Challenge — Engine Audit
 
-**Status: Session DF-2a complete (foundation rewrite landed 2026-05-14).**
+**Status: Session DF-2b complete (pedagogy layer landed 2026-05-14).**
+
+What landed in DF-2b:
+- **PART A — Pattern-inference action.** New phase
+  `'pattern-inference'` runs once before forecasting. Player submits
+  `{ phase: 'pattern-inference', guess: <enum> }`; engine validates
+  the enum (Pattern B) and the phase ordering (Pattern C), records
+  the guess, and advances the participant to the `'forecasting'`
+  phase. Closes audit M1.
+- **PART B — Pattern hiding (Pattern A).** `getPublicState` no
+  longer emits `demandPattern`, `scenarioName`, `optimalMethod`, or
+  any pattern-encoding field. `displayName` (pattern-neutral) is
+  added to `scenarios.json` per scenario. `getParticipantState`
+  reveals `truePattern`, `optimalMethod`, `recommendedMethods`,
+  `patternRationale`, `fullDemandData`, and per-forecast
+  `usedRecommendedMethod` only after `isComplete`. The
+  sanitization boundary is commented at the top of `getPublicState`
+  / `getParticipantState` mirroring EV Gambit's `stripQuiz()`.
+  Closes audit D11 + D14.
+- **PART C — Three-component scoring.** `inferenceScore` (partial-
+  credit matrix from `patternRecommendations.json`),
+  `methodAppropriatenessScore` (fraction of forecasts using a
+  method recommended for the TRUE pattern), and `accuracyScore`
+  (DF-2a's `max(0, 100 - MAPE)`). Final score is the weighted blend
+  per scenario's `scoringWeights` (default 0.30 / 0.30 / 0.40).
+  Engine validates weights sum to 1.0 at scenario load. Closes
+  audit M2 + M9.
+- **PART D — Per-participant state.** State is a
+  `Map<participantId, ParticipantStateDF>`. Each participant gets
+  an RNG seed of `hash(sessionId:participantId:scenarioId)`, so two
+  students in one session see different-but-reproducible demand
+  series. `applyAction(participantId, ...)` honors the
+  participantId (audit D15). Lazy-create state for mid-session
+  joiners (mirrors EV Gambit's pattern). Closes audit M4 + D15.
+- **PART E — D17 + D16.** `optimalMethodUsed` (sticky) replaced
+  with `optimalMethodChoiceCount` (per-period counter; hidden
+  until isComplete). D16 was effectively closed by DF-2a's switch
+  from `prisma.gameState.create` to `sessionStateCache.upsert`;
+  payload now stores the `participantStates` map keyed by pid.
+- **`patternRecommendations.json`** added under
+  `data/demandForecast/` carrying the four
+  pattern → recommended-method sets and the 4×4 inference
+  partial-credit matrix.
+- 67 backend tests (40 DF-2a regression + 27 DF-2b). Full backend
+  suite: 227 passing.
+
+What remains for **DF-3a / DF-3b**: UI only — engine is feature-
+complete.
+
+### Sockets `auto-advance` audit for per-participant rework
+
+`sockets/index.ts` line 290 gates round advancement on
+`playerDecision` row count. Demand Forecast (like EV Gambit) does
+not write to `prisma.playerDecision`, so the auto-advance path is
+dormant for this sim. **No cross-cutting socket change required.**
+Verified 2026-05-14 with a grep across the engine source.
+
+---
+
+**Earlier status: Session DF-2a complete (foundation rewrite landed 2026-05-14).**
 
 What landed in DF-2a:
 - Six method helpers: Naive, MA(n), WMA(weights), ES(α), Holt's

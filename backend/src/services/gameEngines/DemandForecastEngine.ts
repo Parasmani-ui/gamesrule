@@ -8,32 +8,46 @@ import { prisma } from '../../db';
  * Demand Forecast Challenge — Time-Series Forecasting Drill
  *
  * Operations-management curriculum (Stevenson Ch. 3, Heizer Ch. 4,
- * Chase & Jacobs Ch. 17–18). Single-player drill: 20 periods of demand,
- * 5 warmup periods of revealed history, then 15 periods where the
- * student selects a forecasting method and parameters and the engine
- * computes the forecast and grades it on MAD/MSE/MAPE/Tracking-Signal.
+ * Chase & Jacobs Ch. 17–18). Two-phase single-player drill, one
+ * concurrent state per participant in a session.
  *
- * Six canonical methods: Naive, Moving Average, Weighted Moving Average,
- * Exponential Smoothing, Holt's Double Exponential Smoothing, Linear
- * Regression.
+ *   phase 'pattern-inference' — player sees the warmup demand series
+ *     with NO pattern label and guesses which of the four canonical
+ *     patterns it is.
+ *   phase 'forecasting' — per-period: pick a method + params, engine
+ *     computes the forecast and grades it on MAD/MSE/MAPE/Tracking-
+ *     Signal. Headline pedagogy is method-appropriateness, not just
+ *     accuracy.
  *
- * Phase 1.5 — Session DF-2a foundation rewrite. Replaces the legacy
- * `{ forecast: number, method: string }` action shape (which let students
- * type any number with any method label and graded the number) with
- * `{ method, params }` where the engine COMPUTES the forecast from the
- * student's choices.
- *
- * Out of scope this session (DF-2b backlog): pattern-inference action,
- * multi-participant per-participant state, hide demandPattern from
- * publicState (Pattern A), method-appropriateness scoring, optimal-method
- * counter (currently sticky-true).
+ * Phase 1.5 — Session DF-2b. Builds on DF-2a's foundation (six method
+ * helpers + seeded RNG + validation + async/sync split) to add the
+ * pedagogy layer:
+ *   - Pattern-inference action (audit M1)
+ *   - Per-participant state map (audit M4 / D15)
+ *   - Pattern hidden from publicState (audit D11/D14 — Pattern A)
+ *   - 3-component scoring: inference + method-appropriateness +
+ *     accuracy (audit M2/M9)
+ *   - optimalMethodUsed → per-period counter (audit D17)
  *
  * Content externalised under data/demandForecast/:
- *   scenarios.json — pattern parameters per scenario
- *   methods.json   — canonical 6 methods + parameter schemas
+ *   scenarios.json              — pattern parameters + scoring weights
+ *   methods.json                — canonical 6 methods + param schemas
+ *   patternRecommendations.json — pattern→recommended-methods +
+ *                                 inference partial-credit matrix
+ *
+ * Sanitization boundary (security/pedagogy-critical, mirror EV Gambit's
+ * stripQuiz pattern):
+ *   - getPublicState NEVER emits the true demand pattern, the optimal
+ *     method, the un-revealed future demand series, scenario `name`
+ *     (which encodes the pattern), or `truePatternHash` derivatives.
+ *   - getParticipantState REVEALS truePattern + optimalMethod +
+ *     inferenceResult ONLY when state.isComplete === true.
+ *   - All publicly visible scenario identifiers use `displayName` (a
+ *     pattern-neutral label faculty chooses).
  */
 
 type DemandPattern = 'stationary' | 'trending' | 'seasonal' | 'random';
+const PATTERN_ENUM: DemandPattern[] = ['stationary', 'trending', 'seasonal', 'random'];
 
 type CanonicalMethod =
   | 'naive'
@@ -43,9 +57,18 @@ type CanonicalMethod =
   | 'holts-double-es'
   | 'linear-regression';
 
+type Phase = 'pattern-inference' | 'forecasting';
+
+interface ScoringWeights {
+  inference: number;
+  methodAppropriateness: number;
+  accuracy: number;
+}
+
 interface ScenarioMeta {
   id: string;
   name: string;
+  displayName: string;
   description: string;
   pattern: DemandPattern;
   baseLevel: number;
@@ -57,6 +80,7 @@ interface ScenarioMeta {
   warmupPeriods: number;
   currency: string;
   currencySymbol: string;
+  scoringWeights: ScoringWeights;
 }
 
 interface MethodParamSchema {
@@ -77,6 +101,17 @@ interface MethodMeta {
   params: Record<string, MethodParamSchema>;
 }
 
+interface PatternRecommendation {
+  recommended: CanonicalMethod[];
+  rationale: string;
+  limitation?: string;
+}
+
+interface RecommendationsData {
+  patterns: Record<DemandPattern, PatternRecommendation>;
+  inferencePartialCredit: Record<DemandPattern, Record<DemandPattern, number>>;
+}
+
 interface ForecastEntry {
   period: number;
   forecast: number;
@@ -86,6 +121,37 @@ interface ForecastEntry {
   error: number;
   absoluteError: number;
   percentageError: number | null;
+  usedRecommendedMethod: boolean; // resolved against TRUE pattern
+}
+
+interface InferenceRecord {
+  guess: DemandPattern;
+  submittedAt: string;
+}
+
+interface ParticipantStateDF {
+  sessionId: string;
+  participantId: string;
+  phase: Phase;
+  historicalDemand: number[];
+  rngState: number;
+  currentPeriod: number;
+  totalPeriods: number;
+  warmupPeriods: number;
+  scenarioId: string;
+  truePattern: DemandPattern;
+  scoringWeights: ScoringWeights;
+  playerForecasts: ForecastEntry[];
+  inference?: InferenceRecord;
+  optimalMethodChoiceCount: number;
+  cumulativeMetrics: {
+    mad: number;
+    mse: number;
+    mape: number;
+    trackingSignal: number;
+    mapeExcludedCount: number;
+  };
+  isComplete: boolean;
 }
 
 interface DemandForecastInitOptions {
@@ -96,47 +162,14 @@ interface DemandForecastInitOptions {
   historicalDemand?: number[];
 }
 
-interface DemandForecastGameState {
-  sessionId: string;
-  participantId: string;
-  scenarioId: string;
-  scenarioName: string;
-  currencySymbol: string;
-  config: {
-    pattern: DemandPattern;
-    baseLevel: number;
-    slope: number;
-    sineAmplitude: number;
-    sinePeriod: number;
-    noiseAmplitude: number;
-    numPeriods: number;
-    warmupPeriods: number;
-  };
-  rngState: number;
-  historicalDemand: number[];
-  currentPeriod: number;
-  totalPeriods: number;
-  playerForecasts: ForecastEntry[];
-  cumulativeMetrics: {
-    mad: number;
-    mse: number;
-    mape: number;
-    trackingSignal: number;
-    mapeExcludedCount: number;
-  };
-  score: number;
-  optimalMethodUsed: boolean;
-  isComplete: boolean;
-}
-
 const DATA_DIR = path.join(__dirname, 'data', 'demandForecast');
 const MAPE_EPSILON = 1e-9;
 const FORECAST_HARD_CAP = 1e9;
 
 /**
- * Mulberry32 PRNG (mirrors Defect Detectives Session 9). Deterministic,
- * seeded by sessionId hash so two students running the same scenario get
- * the same demand series — closes audit D8.
+ * Mulberry32 PRNG. Deterministic, seeded by sessionId + participantId +
+ * scenarioId so each student gets a different-but-reproducible series.
+ * Mirrors Defect Detectives Session 9 PRNG. Closes audit D8.
  */
 function mulberry32(seed: number): { next: () => number; state: () => number } {
   let s = seed >>> 0;
@@ -162,10 +195,16 @@ function hashString(s: string): number {
 }
 
 export class DemandForecastEngine extends BaseGameEngine {
-  private state!: DemandForecastGameState;
+  // Shared engine-level content (loaded from JSON once per engine
+  // instance and immutable thereafter).
   private canonicalMethods: CanonicalMethod[] = [];
   private methodMeta: Record<CanonicalMethod, MethodMeta> = {} as any;
-  private rng!: { next: () => number; state: () => number };
+  private scenarioMeta!: ScenarioMeta;
+  private recommendations!: RecommendationsData;
+  private initOptions: DemandForecastInitOptions = {};
+
+  // Per-participant state (audit M4 fix).
+  private participantStates: Map<string, ParticipantStateDF> = new Map();
 
   constructor(sessionId: string) {
     super(sessionId, 'demand-forecast-challenge');
@@ -184,14 +223,14 @@ export class DemandForecastEngine extends BaseGameEngine {
     if (participants.length === 0) {
       throw new Error('No participant found for session');
     }
-    const participant = participants[0];
 
     await this.loadMethodMeta();
+    await this.loadRecommendations();
     const scenarioId = options.scenario || 'default';
-    const scenario = await this.loadScenarioMeta(scenarioId);
+    this.scenarioMeta = await this.loadScenarioMeta(scenarioId);
 
-    const totalPeriods = options.numPeriods ?? scenario.numPeriods;
-    const warmupPeriods = options.warmupPeriods ?? scenario.warmupPeriods;
+    const totalPeriods = options.numPeriods ?? this.scenarioMeta.numPeriods;
+    const warmupPeriods = options.warmupPeriods ?? this.scenarioMeta.warmupPeriods;
 
     if (!Number.isInteger(totalPeriods) || totalPeriods <= 0) {
       throw new Error('numPeriods must be a positive integer');
@@ -205,37 +244,84 @@ export class DemandForecastEngine extends BaseGameEngine {
       );
     }
 
-    // Seeded RNG so two engine instances with the same sessionId produce
-    // identical demand series — closes audit D8 non-reproducibility.
-    const seed = options.rngSeed ?? hashString(`${this.sessionId}:${scenarioId}`);
-    this.rng = mulberry32(seed);
+    this.initOptions = { ...options, numPeriods: totalPeriods, warmupPeriods };
+
+    // Try to restore per-participant state from cache. Old DF-2a payloads
+    // are flat-state (no participantStates map); treat as stale.
+    let restored = 0;
+    try {
+      const cached = await prisma.sessionStateCache.findUnique({
+        where: { session_id: this.sessionId },
+      });
+      const map = (cached?.state_data as any)?.participantStates;
+      if (map && typeof map === 'object') {
+        for (const [pid, st] of Object.entries(map)) {
+          const candidate = st as Partial<ParticipantStateDF>;
+          if (
+            typeof candidate.phase === 'string' &&
+            Array.isArray(candidate.historicalDemand) &&
+            Array.isArray(candidate.playerForecasts)
+          ) {
+            this.participantStates.set(pid, candidate as ParticipantStateDF);
+            restored++;
+          }
+        }
+      }
+    } catch (err) {
+      this.log('Cache restore failed; starting fresh', err);
+    }
+
+    // Lazy-create fresh state for any participant without a cached entry.
+    for (const p of participants) {
+      if (!this.participantStates.has(p.id)) {
+        this.participantStates.set(p.id, this.makeFreshState(p.id));
+      }
+    }
+
+    await this.saveGameState(true);
+    this.isInitialized = true;
+    this.log(
+      `Initialized (scenario=${scenarioId}, participants=${this.participantStates.size}, restored=${restored})`
+    );
+  }
+
+  /**
+   * Generate a fresh per-participant state. Seeded RNG keyed on
+   * (sessionId, participantId, scenarioId) so two students in the same
+   * session get DIFFERENT demand series but a student replaying their
+   * own seat sees the SAME series. Audit M4 + D8.
+   *
+   * If options.historicalDemand is provided, all participants use the
+   * same injected series (test-only escape hatch).
+   */
+  private makeFreshState(participantId: string): ParticipantStateDF {
+    const scenario = this.scenarioMeta;
+    const totalPeriods = this.initOptions.numPeriods ?? scenario.numPeriods;
+    const warmupPeriods = this.initOptions.warmupPeriods ?? scenario.warmupPeriods;
+    const seed =
+      this.initOptions.rngSeed ??
+      hashString(`${this.sessionId}:${participantId}:${scenario.id}`);
+    const rng = mulberry32(seed);
 
     const historicalDemand =
-      options.historicalDemand && options.historicalDemand.length === totalPeriods
-        ? options.historicalDemand.slice()
-        : this.generateDemandPattern(scenario, totalPeriods);
+      this.initOptions.historicalDemand && this.initOptions.historicalDemand.length === totalPeriods
+        ? this.initOptions.historicalDemand.slice()
+        : this.generateDemandPattern(scenario, totalPeriods, rng);
 
-    this.state = {
+    return {
       sessionId: this.sessionId,
-      participantId: participant.id,
-      scenarioId: scenario.id,
-      scenarioName: scenario.name,
-      currencySymbol: scenario.currencySymbol,
-      config: {
-        pattern: scenario.pattern,
-        baseLevel: scenario.baseLevel,
-        slope: scenario.slope,
-        sineAmplitude: scenario.sineAmplitude,
-        sinePeriod: scenario.sinePeriod,
-        noiseAmplitude: scenario.noiseAmplitude,
-        numPeriods: totalPeriods,
-        warmupPeriods,
-      },
-      rngState: this.rng.state(),
+      participantId,
+      phase: 'pattern-inference',
       historicalDemand,
+      rngState: rng.state(),
       currentPeriod: warmupPeriods,
       totalPeriods,
+      warmupPeriods,
+      scenarioId: scenario.id,
+      truePattern: scenario.pattern,
+      scoringWeights: scenario.scoringWeights,
       playerForecasts: [],
+      optimalMethodChoiceCount: 0,
       cumulativeMetrics: {
         mad: 0,
         mse: 0,
@@ -243,32 +329,111 @@ export class DemandForecastEngine extends BaseGameEngine {
         trackingSignal: 0,
         mapeExcludedCount: 0,
       },
-      score: 0,
-      optimalMethodUsed: false,
       isComplete: false,
     };
-
-    await this.saveGameState();
-    this.isInitialized = true;
-    this.log(`Initialized (scenario=${scenario.id}, periods=${totalPeriods}, warmup=${warmupPeriods})`);
   }
 
   // =========================================================================
-  // ACTIONS — new contract: { method, params }. Engine computes the
-  // forecast from helpers; client never supplies a forecast number.
+  // ACTIONS — dispatch on `phase` discriminator or method presence
   // =========================================================================
 
-  async applyAction(_participantId: string, action: any): Promise<ActionResult> {
+  async applyAction(participantId: string, action: any): Promise<ActionResult> {
     this.ensureInitialized();
 
-    if (this.state.isComplete) {
+    if (typeof participantId !== 'string' || !participantId) {
+      return { success: false, message: 'participantId is required' };
+    }
+
+    // Lazy-create state for unknown participants (mirror EV Gambit pattern
+    // — keeps the engine resilient when a participant joins mid-session).
+    if (!this.participantStates.has(participantId)) {
+      this.participantStates.set(participantId, this.makeFreshState(participantId));
+    }
+
+    const state = this.participantStates.get(participantId)!;
+    if (state.isComplete) {
       return { success: false, message: 'Simulation already complete' };
     }
 
-    const { method, params } = action || {};
+    // Pattern-inference action.
+    if (action?.phase === 'pattern-inference' || action?.guess !== undefined) {
+      return this.handlePatternInference(state, action);
+    }
 
-    // DEFECT 1 (Pattern B) — method enum check.
-    if (typeof method !== 'string' || !this.canonicalMethods.includes(method as CanonicalMethod)) {
+    // Forecast action (DF-2a contract: { method, params }).
+    if (typeof action?.method === 'string') {
+      return this.handleForecast(state, action);
+    }
+
+    return {
+      success: false,
+      message: 'Unknown action shape. Expected { phase: "pattern-inference", guess } or { method, params }.',
+    };
+  }
+
+  /**
+   * PART A — pattern-inference handler.
+   *
+   * Pattern B: `guess` must be one of the 4 canonical pattern enums.
+   * Pattern C: rejected unless engine is in 'pattern-inference' phase.
+   */
+  private async handlePatternInference(
+    state: ParticipantStateDF,
+    action: any
+  ): Promise<ActionResult> {
+    if (state.phase !== 'pattern-inference') {
+      return {
+        success: false,
+        message: 'Pattern inference already submitted; engine is in the forecasting phase.',
+      };
+    }
+
+    const guess = action?.guess;
+    if (!PATTERN_ENUM.includes(guess)) {
+      return {
+        success: false,
+        message: `Invalid pattern guess "${String(guess)}". Valid: ${PATTERN_ENUM.join(', ')}`,
+      };
+    }
+
+    state.inference = {
+      guess,
+      submittedAt: new Date().toISOString(),
+    };
+    state.phase = 'forecasting';
+
+    await this.saveGameState();
+
+    return {
+      success: true,
+      message: 'Pattern inference recorded. Forecasting phase open.',
+      data: {
+        phase: state.phase,
+        guess,
+        // True pattern + score remain HIDDEN until isComplete (Pattern A).
+      },
+    };
+  }
+
+  /**
+   * Forecast action — unchanged contract from DF-2a:
+   * { method: CanonicalMethod, params: {...} }. The engine computes
+   * the forecast from helpers; the client never supplies a number.
+   *
+   * Pattern C: rejected unless engine is in 'forecasting' phase.
+   * Pattern B: method enum + per-param schema validation.
+   */
+  private async handleForecast(state: ParticipantStateDF, action: any): Promise<ActionResult> {
+    if (state.phase !== 'forecasting') {
+      return {
+        success: false,
+        message: 'Submit a pattern inference first before forecasting.',
+      };
+    }
+
+    const { method, params } = action;
+
+    if (!this.canonicalMethods.includes(method as CanonicalMethod)) {
       return {
         success: false,
         message: `Unknown forecasting method "${String(method)}". Valid methods: ${this.canonicalMethods.join(', ')}`,
@@ -277,7 +442,7 @@ export class DemandForecastEngine extends BaseGameEngine {
 
     const methodId = method as CanonicalMethod;
     const meta = this.methodMeta[methodId];
-    const history = this.state.historicalDemand.slice(0, this.state.currentPeriod);
+    const history = state.historicalDemand.slice(0, state.currentPeriod);
 
     const validation = this.validateMethodParams(meta, params || {}, history.length);
     if (!validation.ok) {
@@ -286,14 +451,11 @@ export class DemandForecastEngine extends BaseGameEngine {
 
     let forecast: number;
     try {
-      forecast = this.computeForecast(methodId, history, params || {}, this.state.currentPeriod);
+      forecast = this.computeForecast(methodId, history, params || {}, state.currentPeriod);
     } catch (err: any) {
       return { success: false, message: err?.message || 'Forecast computation failed' };
     }
 
-    // DEFECT 2 (Pattern B defense-in-depth): the engine never trusts a
-    // client forecast number, but its own helper might still produce
-    // NaN/Infinity for pathological params on a degenerate series.
     if (!Number.isFinite(forecast)) {
       return {
         success: false,
@@ -307,22 +469,30 @@ export class DemandForecastEngine extends BaseGameEngine {
       };
     }
 
-    const actualDemand = this.state.historicalDemand[this.state.currentPeriod];
+    const actualDemand = state.historicalDemand[state.currentPeriod];
     const error = actualDemand - forecast;
     const absoluteError = Math.abs(error);
 
-    // DEFECT 4 (audit D7): MAPE skip-period when actual is ~0 (zero-divisor
-    // poisons the metric). Track exclusion count for transparency. Stevenson
-    // Ch. 3 documents this as the canonical handling for zero-actual periods.
+    // Audit D7 — MAPE skip-period for zero-actual demand.
     let percentageError: number | null = null;
     if (Math.abs(actualDemand) > MAPE_EPSILON) {
       percentageError = (absoluteError / Math.abs(actualDemand)) * 100;
     } else {
-      this.state.cumulativeMetrics.mapeExcludedCount += 1;
+      state.cumulativeMetrics.mapeExcludedCount += 1;
     }
 
-    this.state.playerForecasts.push({
-      period: this.state.currentPeriod,
+    // Audit D17 — per-period counter instead of sticky-true flag. The
+    // "recommended" check uses the TRUE pattern (engine-side); leaking
+    // this would tip off the student which pattern they're in, so the
+    // count itself stays hidden until isComplete via the metrics gate.
+    const recommended = this.recommendations.patterns[state.truePattern].recommended;
+    const usedRecommendedMethod = recommended.includes(methodId);
+    if (usedRecommendedMethod) {
+      state.optimalMethodChoiceCount += 1;
+    }
+
+    state.playerForecasts.push({
+      period: state.currentPeriod,
       forecast,
       actual: actualDemand,
       method: methodId,
@@ -330,31 +500,26 @@ export class DemandForecastEngine extends BaseGameEngine {
       error,
       absoluteError,
       percentageError,
+      usedRecommendedMethod,
     });
 
-    this.updateCumulativeMetrics();
-    this.state.score = Math.max(0, 100 - this.state.cumulativeMetrics.mape);
+    this.updateCumulativeMetrics(state);
 
-    // optimalMethodUsed remains sticky-once-true for now; DF-2b reworks
-    // this into a per-period counter and hides optimalMethod until
-    // isComplete.
-    if (methodId === this.getOptimalMethod()) {
-      this.state.optimalMethodUsed = true;
-    }
-
-    this.state.currentPeriod += 1;
-    this.state.rngState = this.rng.state();
-    if (this.state.currentPeriod >= this.state.totalPeriods) {
-      this.state.isComplete = true;
+    state.currentPeriod += 1;
+    if (state.currentPeriod >= state.totalPeriods) {
+      state.isComplete = true;
     }
 
     await this.saveGameState();
 
+    // Action result: ONLY player-known facts pre-completion (forecast,
+    // actual, errors, accuracy). Method-appropriateness flag and
+    // optimal-method label remain server-side until isComplete.
     return {
       success: true,
-      message: `Forecast recorded for period ${this.state.currentPeriod - 1}`,
+      message: `Forecast recorded for period ${state.currentPeriod - 1}`,
       data: {
-        period: this.state.currentPeriod - 1,
+        period: state.currentPeriod - 1,
         method: methodId,
         params: params || {},
         forecast,
@@ -362,27 +527,31 @@ export class DemandForecastEngine extends BaseGameEngine {
         error,
         absoluteError,
         percentageError,
-        cumulativeMetrics: this.state.cumulativeMetrics,
-        score: this.state.score,
-        isComplete: this.state.isComplete,
+        cumulativeMetrics: state.cumulativeMetrics,
+        isComplete: state.isComplete,
+        // No optimalMethod / no usedRecommendedMethod / no score here —
+        // those reveal only via getParticipantState after isComplete.
       },
     };
   }
 
   async advanceRound(): Promise<RoundResult> {
+    // Demand Forecast is player-paced and per-participant; advanceRound
+    // is a no-op that just mirrors the first participant's progression
+    // so the BaseGameEngine contract is satisfied.
+    const anyState = this.participantStates.values().next().value;
     return {
       success: true,
       message: 'Player-paced simulation',
-      roundNumber: this.state.currentPeriod,
-      isComplete: this.state.isComplete,
+      roundNumber: anyState ? anyState.currentPeriod : 0,
+      isComplete: anyState ? anyState.isComplete : false,
+      isGameComplete: anyState ? anyState.isComplete : false,
     };
   }
 
   // =========================================================================
-  // METHOD HELPERS — six pure-ish private functions; each takes
-  // (history, params, periodIndex?) and returns a single forecast value.
-  // Tested directly via the public action contract; expected outputs in
-  // __tests__/DemandForecastEngine.test.ts use handcrafted history.
+  // METHOD HELPERS (DF-2a) — unchanged behavior, refactored to take an
+  // RNG parameter so per-participant data generation can pass its own.
   // =========================================================================
 
   private computeForecast(
@@ -447,11 +616,9 @@ export class DemandForecastEngine extends BaseGameEngine {
   /**
    * ES: F(t+1) = α·A(t) + (1-α)·F(t).
    *
-   * Initialization choice (Stevenson Ch. 3 / Heizer Ch. 4): F(0) = A(0),
-   * the first available observation. The other textbook convention is
-   * F(0) = mean(initial-window); we use F(0)=A(0) here because warmup
-   * always gives us A(0) reliably and the bias decays geometrically.
-   * Per audit §2.1.
+   * Initialization (Stevenson Ch. 3 / Heizer Ch. 4): F(0) = A(0). The
+   * geometrically-decaying bias from this seeding is the conventional
+   * textbook choice; documented per audit §2.1.
    */
   private computeExponentialSmoothing(history: number[], params: { alpha: number }): number {
     const alpha = params.alpha;
@@ -468,10 +635,8 @@ export class DemandForecastEngine extends BaseGameEngine {
   /**
    * Holt's Double ES (linear-trend variant).
    *
-   * Initialization (Hyndman §7.3 / Heizer Ch. 4): L(0) = A(0); T(0) = A(1) - A(0).
-   * Requires history.length ≥ 2. Per audit §2.1, the L/T initialization is
-   * the conventional textbook choice; an alternative (regression-based seeding)
-   * is a Phase 2 enhancement.
+   * Initialization (Hyndman §7.3 / Heizer Ch. 4): L(0) = A(0);
+   * T(0) = A(1) - A(0). Requires history.length ≥ 2.
    */
   private computeHoltsDoubleES(
     history: number[],
@@ -492,13 +657,9 @@ export class DemandForecastEngine extends BaseGameEngine {
   }
 
   /**
-   * Linear Regression — full-cumulative least-squares fit over ALL history.
-   *
-   * Indexing convention: t starts at 0 (history[0] is for period 0,
-   * history[N-1] for period N-1). To predict the next period after
-   * history of length N, callers pass periodIndex = N (the engine's
-   * default). Tests can pass an explicit periodIndex to exercise the
-   * formula. A windowed-regression variant is on the DF-2b backlog.
+   * Linear Regression — full-cumulative least-squares fit. 0-indexed
+   * periods. Pass `periodIndex` explicitly to forecast a specific
+   * period; default = history.length (next period after history).
    */
   private computeLinearRegression(
     history: number[],
@@ -509,11 +670,9 @@ export class DemandForecastEngine extends BaseGameEngine {
     if (n < 2) {
       throw new Error('Linear Regression requires at least two prior observations.');
     }
-    const ts: number[] = [];
     let sumT = 0;
     let sumA = 0;
     for (let i = 0; i < n; i++) {
-      ts.push(i);
       sumT += i;
       sumA += history[i];
     }
@@ -522,7 +681,7 @@ export class DemandForecastEngine extends BaseGameEngine {
     let num = 0;
     let den = 0;
     for (let i = 0; i < n; i++) {
-      const dt = ts[i] - meanT;
+      const dt = i - meanT;
       num += dt * (history[i] - meanA);
       den += dt * dt;
     }
@@ -536,9 +695,7 @@ export class DemandForecastEngine extends BaseGameEngine {
   }
 
   // =========================================================================
-  // PARAM VALIDATION — closes Pattern B for params side. Method enum
-  // validation happens at the applyAction entry; this validates the
-  // PARAMS object against the method's schema in methods.json.
+  // PARAM VALIDATION
   // =========================================================================
 
   private validateMethodParams(
@@ -553,11 +710,7 @@ export class DemandForecastEngine extends BaseGameEngine {
       }
       switch (schema.type) {
         case 'integer': {
-          if (
-            typeof value !== 'number' ||
-            !Number.isFinite(value) ||
-            !Number.isInteger(value)
-          ) {
+          if (typeof value !== 'number' || !Number.isFinite(value) || !Number.isInteger(value)) {
             return { ok: false, message: `Parameter "${key}" must be an integer.` };
           }
           if (schema.min !== undefined && value < schema.min) {
@@ -643,89 +796,187 @@ export class DemandForecastEngine extends BaseGameEngine {
   }
 
   // =========================================================================
-  // METRICS — Pattern D fix: computeMetricsSync is the resolved object;
-  // computeMetrics async wrapper exists for the BaseGameEngine contract.
-  // Audit C1 — un-awaited Promise pre-Session-DF-2a leaked into UI as `{}`.
+  // METRICS — Pattern D: sync helper for views; async wrapper for the
+  // BaseGameEngine contract.
   // =========================================================================
 
-  private updateCumulativeMetrics(): void {
-    const n = this.state.playerForecasts.length;
+  private updateCumulativeMetrics(state: ParticipantStateDF): void {
+    const n = state.playerForecasts.length;
     if (n === 0) return;
 
-    const sumAbs = this.state.playerForecasts.reduce((s, f) => s + f.absoluteError, 0);
-    const sumSq = this.state.playerForecasts.reduce((s, f) => s + f.error * f.error, 0);
-    const sumErr = this.state.playerForecasts.reduce((s, f) => s + f.error, 0);
+    const sumAbs = state.playerForecasts.reduce((s, f) => s + f.absoluteError, 0);
+    const sumSq = state.playerForecasts.reduce((s, f) => s + f.error * f.error, 0);
+    const sumErr = state.playerForecasts.reduce((s, f) => s + f.error, 0);
 
-    const mapeIncluded = this.state.playerForecasts.filter(
-      f => f.percentageError !== null
-    );
+    const mapeIncluded = state.playerForecasts.filter(f => f.percentageError !== null);
     const sumPct = mapeIncluded.reduce((s, f) => s + (f.percentageError as number), 0);
 
-    this.state.cumulativeMetrics.mad = sumAbs / n;
-    this.state.cumulativeMetrics.mse = sumSq / n;
-    this.state.cumulativeMetrics.mape =
-      mapeIncluded.length > 0 ? sumPct / mapeIncluded.length : 0;
-    this.state.cumulativeMetrics.trackingSignal =
-      this.state.cumulativeMetrics.mad !== 0 ? sumErr / this.state.cumulativeMetrics.mad : 0;
+    state.cumulativeMetrics.mad = sumAbs / n;
+    state.cumulativeMetrics.mse = sumSq / n;
+    state.cumulativeMetrics.mape = mapeIncluded.length > 0 ? sumPct / mapeIncluded.length : 0;
+    state.cumulativeMetrics.trackingSignal =
+      state.cumulativeMetrics.mad !== 0 ? sumErr / state.cumulativeMetrics.mad : 0;
   }
 
-  private computeMetricsSync(): any {
+  /**
+   * PART C — three-component scoring.
+   *
+   * Inference component: `inferencePartialCredit[guess][truth]` from
+   *   patternRecommendations.json. 100 / 60 / 30 / 0 per the matrix.
+   * Method-appropriateness: `usedRecommendedMethod` count / total forecasts.
+   * Accuracy: `max(0, 100 - mape)`.
+   * Final score: weighted blend per scenario's scoringWeights.
+   */
+  private computePartScores(state: ParticipantStateDF): {
+    inferenceScore: number;
+    methodAppropriatenessScore: number;
+    accuracyScore: number;
+    finalScore: number;
+  } {
+    let inferenceScore = 0;
+    if (state.inference) {
+      inferenceScore =
+        this.recommendations.inferencePartialCredit[state.inference.guess]?.[state.truePattern] ?? 0;
+    }
+
+    const totalForecasts = state.playerForecasts.length;
+    const methodAppropriatenessScore =
+      totalForecasts > 0 ? (state.optimalMethodChoiceCount / totalForecasts) * 100 : 0;
+
+    const accuracyScore = Math.max(0, 100 - state.cumulativeMetrics.mape);
+
+    const w = state.scoringWeights;
+    const finalScore =
+      w.inference * inferenceScore +
+      w.methodAppropriateness * methodAppropriatenessScore +
+      w.accuracy * accuracyScore;
+
+    return { inferenceScore, methodAppropriatenessScore, accuracyScore, finalScore };
+  }
+
+  private computeMetricsSyncFor(state: ParticipantStateDF): any {
+    const scores = this.computePartScores(state);
     return {
       playerPerformance: {
-        mad: this.state.cumulativeMetrics.mad,
-        mse: this.state.cumulativeMetrics.mse,
-        mape: this.state.cumulativeMetrics.mape,
-        trackingSignal: this.state.cumulativeMetrics.trackingSignal,
-        mapeExcludedPeriods: this.state.cumulativeMetrics.mapeExcludedCount,
-        score: this.state.score,
+        mad: state.cumulativeMetrics.mad,
+        mse: state.cumulativeMetrics.mse,
+        mape: state.cumulativeMetrics.mape,
+        trackingSignal: state.cumulativeMetrics.trackingSignal,
+        mapeExcludedPeriods: state.cumulativeMetrics.mapeExcludedCount,
+        // Score components — sub-scores are only meaningful after the
+        // game is complete (mid-game accuracy can be misleading); we
+        // still publish them as live diagnostics, but final-score gate
+        // is the player-facing one.
+        inferenceScore: state.isComplete ? scores.inferenceScore : null,
+        methodAppropriatenessScore: state.isComplete
+          ? scores.methodAppropriatenessScore
+          : null,
+        accuracyScore: state.isComplete ? scores.accuracyScore : null,
+        finalScore: state.isComplete ? scores.finalScore : null,
+        scoringWeights: state.scoringWeights,
+        optimalMethodChoiceCount: state.isComplete ? state.optimalMethodChoiceCount : null,
       },
-      dataPattern: this.state.config.pattern,
-      optimalMethod: this.getOptimalMethod(),
-      methodsUsed: this.getMethodDistribution(),
-      forecastsCount: this.state.playerForecasts.length,
+      // Pattern A: NEVER leak truePattern / optimalMethod mid-game.
+      truePattern: state.isComplete ? state.truePattern : null,
+      optimalMethod: state.isComplete
+        ? this.recommendations.patterns[state.truePattern].recommended[0]
+        : null,
+      inferenceGuess: state.inference?.guess ?? null,
+      forecastsCount: state.playerForecasts.length,
     };
   }
 
   async computeMetrics(): Promise<any> {
     this.ensureInitialized();
-    return this.computeMetricsSync();
+    const anyState = this.participantStates.values().next().value;
+    if (!anyState) return {};
+    return this.computeMetricsSyncFor(anyState);
   }
 
   // =========================================================================
-  // STATE VIEWS
+  // STATE VIEWS — Pattern A sanitization boundary.
+  //
+  // getPublicState is broadcast to the whole room and is the lowest-trust
+  // surface. It must contain NOTHING that lets a player derive the true
+  // pattern.
+  //
+  // getParticipantState is sent only to the owning socket. It may include
+  // the participant's OWN inference guess, OWN forecasts, OWN cumulative
+  // accuracy. It MUST NOT reveal truePattern, optimalMethod, or the
+  // method-appropriateness flag on individual forecasts UNTIL isComplete.
   // =========================================================================
 
   getPublicState(): any {
     if (!this.isInitialized) return null;
-    const visibleHistory = this.state.historicalDemand.slice(0, this.state.currentPeriod);
     return {
-      scenarioId: this.state.scenarioId,
-      scenarioName: this.state.scenarioName,
-      currencySymbol: this.state.currencySymbol,
-      currentPeriod: this.state.currentPeriod,
-      totalPeriods: this.state.totalPeriods,
-      warmupPeriods: this.state.config.warmupPeriods,
-      historicalDemand: visibleHistory,
-      forecastsCount: this.state.playerForecasts.length,
-      cumulativeMetrics: this.state.cumulativeMetrics,
-      score: this.state.score,
-      isComplete: this.state.isComplete,
-      // Note: demandPattern is still exposed here (DF-2a foundation scope).
-      // DF-2b will hide it behind a pattern-inference action — see audit
-      // Pattern A § 6 (D11/D14).
-      demandPattern: this.state.config.pattern,
+      scenarioId: this.scenarioMeta.id,
+      displayName: this.scenarioMeta.displayName,
+      currencySymbol: this.scenarioMeta.currencySymbol,
+      totalPeriods: this.initOptions.numPeriods ?? this.scenarioMeta.numPeriods,
+      warmupPeriods: this.initOptions.warmupPeriods ?? this.scenarioMeta.warmupPeriods,
       availableMethods: this.publicMethods(),
+      patternOptions: PATTERN_ENUM,
+      // DELIBERATELY OMITTED (Pattern A — DF-2b):
+      //   - demandPattern / truePattern
+      //   - scenarioName  (e.g. "Trending Demand — Heizer Ch. 4 …" leaks)
+      //   - optimalMethod, recommended-method list
+      //   - per-participant historicalDemand / forecasts (per-pid only)
     };
   }
 
-  getParticipantState(_participantId: string): any {
+  getParticipantState(participantId: string): any {
     if (!this.isInitialized) return null;
+
+    // Lazy-create on first read for participants who joined mid-session.
+    if (!this.participantStates.has(participantId)) {
+      this.participantStates.set(participantId, this.makeFreshState(participantId));
+      this.saveGameState().catch(err => this.log('saveGameState failed', err));
+    }
+
+    const state = this.participantStates.get(participantId)!;
+    const visibleHistory = state.historicalDemand.slice(0, state.currentPeriod);
+
+    // Strip the `usedRecommendedMethod` flag from individual forecasts
+    // until isComplete — leaking even per-forecast hit/miss tells the
+    // student which pattern they're in.
+    const sanitizedForecasts = state.isComplete
+      ? state.playerForecasts
+      : state.playerForecasts.map(f => ({
+          period: f.period,
+          forecast: f.forecast,
+          actual: f.actual,
+          method: f.method,
+          params: f.params,
+          error: f.error,
+          absoluteError: f.absoluteError,
+          percentageError: f.percentageError,
+          // usedRecommendedMethod DELIBERATELY OMITTED (Pattern A).
+        }));
+
     return {
       ...this.getPublicState(),
-      playerForecasts: this.state.playerForecasts,
+      participantId,
+      phase: state.phase,
+      currentPeriod: state.currentPeriod,
+      historicalDemand: visibleHistory,
+      playerForecasts: sanitizedForecasts,
+      inferenceGuess: state.inference?.guess ?? null,
+      cumulativeMetrics: state.cumulativeMetrics,
       // Pattern D: synchronous resolved object, not a Promise.
-      metrics: this.computeMetricsSync(),
-      fullDemandData: this.state.isComplete ? this.state.historicalDemand : undefined,
+      metrics: this.computeMetricsSyncFor(state),
+      isComplete: state.isComplete,
+      // Reveals gated to post-game only (Pattern A):
+      truePattern: state.isComplete ? state.truePattern : undefined,
+      optimalMethod: state.isComplete
+        ? this.recommendations.patterns[state.truePattern].recommended[0]
+        : undefined,
+      recommendedMethods: state.isComplete
+        ? this.recommendations.patterns[state.truePattern].recommended
+        : undefined,
+      patternRationale: state.isComplete
+        ? this.recommendations.patterns[state.truePattern].rationale
+        : undefined,
+      fullDemandData: state.isComplete ? state.historicalDemand : undefined,
     };
   }
 
@@ -733,7 +984,13 @@ export class DemandForecastEngine extends BaseGameEngine {
   // HELPERS
   // =========================================================================
 
-  private publicMethods(): { id: CanonicalMethod; label: string; formula: string; description: string; params: Record<string, MethodParamSchema> }[] {
+  private publicMethods(): {
+    id: CanonicalMethod;
+    label: string;
+    formula: string;
+    description: string;
+    params: Record<string, MethodParamSchema>;
+  }[] {
     return this.canonicalMethods.map(id => {
       const m = this.methodMeta[id];
       return {
@@ -746,64 +1003,37 @@ export class DemandForecastEngine extends BaseGameEngine {
     });
   }
 
-  private getOptimalMethod(): CanonicalMethod {
-    switch (this.state.config.pattern) {
-      case 'stationary':
-        return 'moving-average';
-      case 'trending':
-        return 'holts-double-es';
-      case 'seasonal':
-        // Holt-Winters / classical decomposition aren't in the canonical 6
-        // for DF-2a; closest in-set option is Holt's. DF-2b adds a real
-        // seasonal method or rebrands the optimal mapping.
-        return 'holts-double-es';
-      case 'random':
-        return 'naive';
-      default:
-        return 'exponential-smoothing';
-    }
-  }
-
-  private getMethodDistribution(): Record<string, number> {
-    const dist: Record<string, number> = {};
-    for (const f of this.state.playerForecasts) {
-      dist[f.method] = (dist[f.method] || 0) + 1;
-    }
-    return dist;
-  }
-
-  private generateDemandPattern(scenario: ScenarioMeta, periods: number): number[] {
+  private generateDemandPattern(
+    scenario: ScenarioMeta,
+    periods: number,
+    rng: { next: () => number; state: () => number }
+  ): number[] {
     const out: number[] = [];
     const { pattern, baseLevel, slope, sineAmplitude, sinePeriod, noiseAmplitude } = scenario;
+    const noise = (amp: number) => (rng.next() - 0.5) * 2 * amp;
 
     for (let t = 0; t < periods; t++) {
       let value = baseLevel;
       switch (pattern) {
         case 'stationary':
-          value += this.noise(noiseAmplitude);
+          value += noise(noiseAmplitude);
           break;
         case 'trending':
-          value += slope * t + this.noise(noiseAmplitude);
+          value += slope * t + noise(noiseAmplitude);
           break;
         case 'seasonal': {
-          // Audit D6 fix: sinePeriod is now a config field (default 4 in
-          // scenarios.json), so "quarterly" really means period 4 — not
-          // the legacy hardcoded 12.
-          const seasonal = sineAmplitude * Math.sin((2 * Math.PI * t) / Math.max(1, sinePeriod));
-          value += seasonal + this.noise(noiseAmplitude);
+          const seasonal =
+            sineAmplitude * Math.sin((2 * Math.PI * t) / Math.max(1, sinePeriod));
+          value += seasonal + noise(noiseAmplitude);
           break;
         }
         case 'random':
-          value += this.noise(noiseAmplitude);
+          value += noise(noiseAmplitude);
           break;
       }
       out.push(Math.max(0, Math.round(value)));
     }
     return out;
-  }
-
-  private noise(amplitude: number): number {
-    return (this.rng.next() - 0.5) * 2 * amplitude;
   }
 
   // =========================================================================
@@ -821,6 +1051,16 @@ export class DemandForecastEngine extends BaseGameEngine {
       const known = Object.keys(parsed.scenarios).join(', ');
       throw new Error(
         `Unknown Demand Forecast scenario: "${scenarioId}". Known scenarios: ${known}`
+      );
+    }
+    const w = scenario.scoringWeights;
+    if (!w) {
+      throw new Error(`Scenario "${scenarioId}" missing scoringWeights`);
+    }
+    const sum = w.inference + w.methodAppropriateness + w.accuracy;
+    if (Math.abs(sum - 1.0) > 0.001) {
+      throw new Error(
+        `Scenario "${scenarioId}" scoringWeights must sum to 1.0 (got ${sum.toFixed(4)})`
       );
     }
     return scenario;
@@ -841,12 +1081,46 @@ export class DemandForecastEngine extends BaseGameEngine {
     }
   }
 
-  private async saveGameState(): Promise<void> {
+  private async loadRecommendations(): Promise<void> {
+    const raw = await fs.readFile(path.join(DATA_DIR, 'patternRecommendations.json'), 'utf-8');
+    const parsed = JSON.parse(raw) as RecommendationsData;
+    // Sanity check: every pattern enum has both a recommended-set and a
+    // full partial-credit row.
+    for (const p of PATTERN_ENUM) {
+      if (!parsed.patterns?.[p]?.recommended) {
+        throw new Error(`patternRecommendations.json missing patterns.${p}.recommended`);
+      }
+      const row = parsed.inferencePartialCredit?.[p];
+      if (!row) {
+        throw new Error(`patternRecommendations.json missing inferencePartialCredit.${p}`);
+      }
+      for (const truth of PATTERN_ENUM) {
+        if (typeof row[truth] !== 'number') {
+          throw new Error(
+            `patternRecommendations.json inferencePartialCredit.${p}.${truth} not a number`
+          );
+        }
+      }
+    }
+    this.recommendations = parsed;
+  }
+
+  /**
+   * Persistence — audit D16. The legacy engine wrote a new `gameState`
+   * row per action via `prisma.gameState.create`; DF-2a flipped to a
+   * single `sessionStateCache.upsert` row, which already closes the
+   * storage-growth defect. Each call here overwrites the same row.
+   */
+  private async saveGameState(_force: boolean = false): Promise<void> {
     try {
+      const payload = {
+        participantStates: Object.fromEntries(this.participantStates.entries()),
+        scenarioId: this.scenarioMeta?.id,
+      };
       await prisma.sessionStateCache.upsert({
         where: { session_id: this.sessionId },
-        update: { state_data: this.state as any, updated_at: new Date() },
-        create: { session_id: this.sessionId, state_data: this.state as any },
+        update: { state_data: payload as any, updated_at: new Date() },
+        create: { session_id: this.sessionId, state_data: payload as any },
       });
     } catch (err) {
       this.log('Warning: could not persist state', err);

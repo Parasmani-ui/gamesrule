@@ -1,9 +1,11 @@
 {
   "defaultScenario": "default",
+  "_about_scoringWeights": "Three-component score blend per DF-2b. inference + methodAppropriateness + accuracy must sum to 1.0 (engine validates at load). Tune these per scenario to weight what each cohort should learn most.",
   "scenarios": {
     "default": {
       "id": "default",
       "name": "Stationary Demand — Stevenson Ch. 3 baseline",
+      "displayName": "Regional Retail Demand — Q1-Q5",
       "description": "Baseline operations-management drill. Roughly horizontal weekly demand (mean ~100) with random noise. Suited to Naive, Moving Average, and Exponential Smoothing. 20 periods total, 5 warmup periods of revealed history before forecasting begins.",
       "pattern": "stationary",
       "baseLevel": 100,
@@ -14,11 +16,13 @@
       "numPeriods": 20,
       "warmupPeriods": 5,
       "currency": "INR",
-      "currencySymbol": "₹"
+      "currencySymbol": "₹",
+      "scoringWeights": { "inference": 0.30, "methodAppropriateness": 0.30, "accuracy": 0.40 }
     },
     "trending-quarterly-retail": {
       "id": "trending-quarterly-retail",
       "name": "Trending Demand — Heizer Ch. 4 retail growth",
+      "displayName": "Growth-Phase Retailer — Weekly Demand",
       "description": "A growing-retail-chain scenario with a clean linear upward trend (slope +4 units/period) over a baseline of ~80. Naive and Moving Average will systematically under-forecast; Holt's Double Exponential Smoothing and Linear Regression should track best.",
       "pattern": "trending",
       "baseLevel": 80,
@@ -29,11 +33,13 @@
       "numPeriods": 20,
       "warmupPeriods": 5,
       "currency": "INR",
-      "currencySymbol": "₹"
+      "currencySymbol": "₹",
+      "scoringWeights": { "inference": 0.30, "methodAppropriateness": 0.30, "accuracy": 0.40 }
     },
     "seasonal-quarterly": {
       "id": "seasonal-quarterly",
       "name": "Seasonal Demand — quarterly cycle (audit D6 fix)",
+      "displayName": "Periodic Demand Series — Weekly View",
       "description": "Quarterly seasonality (sinePeriod 4) over a stationary mean of 100. Audit D6 documented that the legacy engine had a 12-period sine mislabelled as quarterly; this scenario ships a true 4-period cycle so 20 periods give 5 clean cycles.",
       "pattern": "seasonal",
       "baseLevel": 100,
@@ -44,11 +50,13 @@
       "numPeriods": 20,
       "warmupPeriods": 5,
       "currency": "INR",
-      "currencySymbol": "₹"
+      "currencySymbol": "₹",
+      "scoringWeights": { "inference": 0.30, "methodAppropriateness": 0.30, "accuracy": 0.40 }
     },
     "random-noise": {
       "id": "random-noise",
       "name": "Random Demand — pure white noise",
+      "displayName": "Volatile Demand Series — Weekly",
       "description": "No trend, no seasonality, large noise around a baseline of 100. Naive forecasting is the canonical recommendation; sophisticated methods will overfit. Useful for showing students that complexity is not always better.",
       "pattern": "random",
       "baseLevel": 100,
@@ -59,7 +67,8 @@
       "numPeriods": 20,
       "warmupPeriods": 5,
       "currency": "INR",
-      "currencySymbol": "₹"
+      "currencySymbol": "₹",
+      "scoringWeights": { "inference": 0.30, "methodAppropriateness": 0.30, "accuracy": 0.40 }
     }
   }
 }
