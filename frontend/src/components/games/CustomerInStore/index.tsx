@@ -9,6 +9,14 @@ import { Results } from './Results';
 
 type Mode = 'learning-by-doing' | 'task-decomposition' | 'binary-feedback';
 
+type CustomerInStoreAction = {
+  actionType: 'submit_answer';
+  questionIndex: number;
+  answer: number;
+  timeSpent: number;
+  stockCalculation?: number[];
+};
+
 interface CurrentQuestion {
   id: number;
   scenario: string;
@@ -38,7 +46,7 @@ export function CustomerInStoreGame({
   isFacilitator,
   actionLoading,
   actionFeedback,
-}: GameProps) {
+}: GameProps<CustomerInStoreAction>) {
   const [phase, setPhase] = useState<'warmup' | 'quiz' | 'complete'>('warmup');
   const [latestFeedback, setLatestFeedback] = useState<any>(null);
   // Track the question index whose feedback is currently displayed; clear

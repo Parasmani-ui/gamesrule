@@ -134,7 +134,7 @@ describe('HRCompensationEngine', () => {
     it('should accept valid expert selection', async () => {
       const result = await engine.applyAction(testParticipantId, {
         stage: 'expert-selection',
-        data: { expertIds: ['exp1', 'exp2'] },
+        expertIds: ['exp1', 'exp2'],
       });
 
       expect(result.success).toBe(true);
@@ -146,7 +146,7 @@ describe('HRCompensationEngine', () => {
     it('should reject empty expert selection', async () => {
       const result = await engine.applyAction(testParticipantId, {
         stage: 'expert-selection',
-        data: { expertIds: [] },
+        expertIds: [],
       });
 
       expect(result.success).toBe(false);
@@ -157,7 +157,7 @@ describe('HRCompensationEngine', () => {
       // Select highest credibility experts (exp1: 0.9, exp2: 0.85)
       const result1 = await engine.applyAction(testParticipantId, {
         stage: 'expert-selection',
-        data: { expertIds: ['exp1', 'exp2'] },
+        expertIds: ['exp1', 'exp2'],
       });
 
       const score1 = result1.data?.expertScore;
@@ -172,22 +172,20 @@ describe('HRCompensationEngine', () => {
       // Complete expert selection first
       await engine.applyAction(testParticipantId, {
         stage: 'expert-selection',
-        data: { expertIds: ['exp1', 'exp2'] },
+        expertIds: ['exp1', 'exp2'],
       });
     });
 
     it('should accept valid attribute weights', async () => {
       const result = await engine.applyAction(testParticipantId, {
         stage: 'attribute-weighting',
-        data: {
-          weights: {
+        weights: {
             tech: 0.35,
             leadership: 0.25,
             experience: 0.20,
             education: 0.10,
             cultural: 0.10,
           },
-        },
       });
 
       expect(result.success).toBe(true);
@@ -199,15 +197,13 @@ describe('HRCompensationEngine', () => {
     it('should reject weights that do not sum to 1.0', async () => {
       const result = await engine.applyAction(testParticipantId, {
         stage: 'attribute-weighting',
-        data: {
-          weights: {
+        weights: {
             tech: 0.30,
             leadership: 0.30,
             experience: 0.20,
             education: 0.10,
             cultural: 0.05, // Sum = 0.95, not 1.0
           },
-        },
       });
 
       expect(result.success).toBe(false);
@@ -218,15 +214,13 @@ describe('HRCompensationEngine', () => {
       // Use optimal weights
       const result = await engine.applyAction(testParticipantId, {
         stage: 'attribute-weighting',
-        data: {
-          weights: {
+        weights: {
             tech: 0.35,
             leadership: 0.25,
             experience: 0.20,
             education: 0.10,
             cultural: 0.10,
           },
-        },
       });
 
       expect(result.data?.attributeWeightScore).toBe(100000);
@@ -236,15 +230,13 @@ describe('HRCompensationEngine', () => {
       // Use equal weights (far from optimal)
       const result = await engine.applyAction(testParticipantId, {
         stage: 'attribute-weighting',
-        data: {
-          weights: {
+        weights: {
             tech: 0.20,
             leadership: 0.20,
             experience: 0.20,
             education: 0.20,
             cultural: 0.20,
           },
-        },
       });
 
       // Score should be significantly less than 100000
@@ -258,29 +250,25 @@ describe('HRCompensationEngine', () => {
       // Complete expert selection
       await engine.applyAction(testParticipantId, {
         stage: 'expert-selection',
-        data: { expertIds: ['exp1', 'exp2'] },
+        expertIds: ['exp1', 'exp2'],
       });
       // Complete attribute weighting
       await engine.applyAction(testParticipantId, {
         stage: 'attribute-weighting',
-        data: {
-          weights: {
+        weights: {
             tech: 0.35,
             leadership: 0.25,
             experience: 0.20,
             education: 0.10,
             cultural: 0.10,
           },
-        },
       });
     });
 
     it('should accept valid candidate ranking', async () => {
       const result = await engine.applyAction(testParticipantId, {
         stage: 'candidate-ranking',
-        data: {
-          ranking: ['cand1', 'cand2', 'cand3', 'cand4'],
-        },
+        ranking: ['cand1', 'cand2', 'cand3', 'cand4'],
       });
 
       expect(result.success).toBe(true);
@@ -292,9 +280,7 @@ describe('HRCompensationEngine', () => {
     it('should reject invalid ranking length', async () => {
       const result = await engine.applyAction(testParticipantId, {
         stage: 'candidate-ranking',
-        data: {
-          ranking: ['cand1', 'cand2'], // Only 2 candidates, need 4
-        },
+        ranking: ['cand1', 'cand2'], // Only 2 candidates, need 4
       });
 
       expect(result.success).toBe(false);
@@ -305,9 +291,7 @@ describe('HRCompensationEngine', () => {
       // Use optimal ranking: cand1, cand2, cand3, cand4 (Rank 1, 2, 3, 4)
       const result = await engine.applyAction(testParticipantId, {
         stage: 'candidate-ranking',
-        data: {
-          ranking: ['cand1', 'cand2', 'cand3', 'cand4'],
-        },
+        ranking: ['cand1', 'cand2', 'cand3', 'cand4'],
       });
 
       expect(result.data?.correlation).toBe('1.000');
@@ -317,9 +301,7 @@ describe('HRCompensationEngine', () => {
     it('should calculate final compensation correctly', async () => {
       const result = await engine.applyAction(testParticipantId, {
         stage: 'candidate-ranking',
-        data: {
-          ranking: ['cand1', 'cand2', 'cand3', 'cand4'],
-        },
+        ranking: ['cand1', 'cand2', 'cand3', 'cand4'],
       });
 
       const breakdown = result.data?.breakdown;
@@ -340,31 +322,27 @@ describe('HRCompensationEngine', () => {
       // Stage 1: Select best experts
       const expertResult = await engine.applyAction(testParticipantId, {
         stage: 'expert-selection',
-        data: { expertIds: ['exp1', 'exp2'] },
+        expertIds: ['exp1', 'exp2'],
       });
       expect(expertResult.success).toBe(true);
 
       // Stage 2: Use optimal weights
       const weightResult = await engine.applyAction(testParticipantId, {
         stage: 'attribute-weighting',
-        data: {
-          weights: {
+        weights: {
             tech: 0.35,
             leadership: 0.25,
             experience: 0.20,
             education: 0.10,
             cultural: 0.10,
           },
-        },
       });
       expect(weightResult.success).toBe(true);
 
       // Stage 3: Use optimal ranking
       const rankResult = await engine.applyAction(testParticipantId, {
         stage: 'candidate-ranking',
-        data: {
-          ranking: ['cand1', 'cand2', 'cand3', 'cand4'],
-        },
+        ranking: ['cand1', 'cand2', 'cand3', 'cand4'],
       });
       expect(rankResult.success).toBe(true);
 
@@ -386,27 +364,23 @@ describe('HRCompensationEngine', () => {
       // Complete all stages
       await engine.applyAction(testParticipantId, {
         stage: 'expert-selection',
-        data: { expertIds: ['exp1', 'exp2'] },
+        expertIds: ['exp1', 'exp2'],
       });
 
       await engine.applyAction(testParticipantId, {
         stage: 'attribute-weighting',
-        data: {
-          weights: {
+        weights: {
             tech: 0.35,
             leadership: 0.25,
             experience: 0.20,
             education: 0.10,
             cultural: 0.10,
           },
-        },
       });
 
       await engine.applyAction(testParticipantId, {
         stage: 'candidate-ranking',
-        data: {
-          ranking: ['cand1', 'cand2', 'cand3', 'cand4'],
-        },
+        ranking: ['cand1', 'cand2', 'cand3', 'cand4'],
       });
 
       const metrics = await engine.computeMetrics();
@@ -427,33 +401,29 @@ describe('HRCompensationEngine', () => {
       // Complete all stages
       await engine.applyAction(testParticipantId, {
         stage: 'expert-selection',
-        data: { expertIds: ['exp1'] },
+        expertIds: ['exp1'],
       });
 
       await engine.applyAction(testParticipantId, {
         stage: 'attribute-weighting',
-        data: {
-          weights: {
+        weights: {
             tech: 0.35,
             leadership: 0.25,
             experience: 0.20,
             education: 0.10,
             cultural: 0.10,
           },
-        },
       });
 
       await engine.applyAction(testParticipantId, {
         stage: 'candidate-ranking',
-        data: {
-          ranking: ['cand1', 'cand2', 'cand3', 'cand4'],
-        },
+        ranking: ['cand1', 'cand2', 'cand3', 'cand4'],
       });
 
       // Try to submit another action
       const result = await engine.applyAction(testParticipantId, {
         stage: 'expert-selection',
-        data: { expertIds: ['exp1'] },
+        expertIds: ['exp1'],
       });
 
       expect(result.success).toBe(false);
@@ -463,15 +433,13 @@ describe('HRCompensationEngine', () => {
     it('rejects a stage-2 action while currentStage=expert-selection', async () => {
       const result = await engine.applyAction(testParticipantId, {
         stage: 'attribute-weighting',
-        data: {
-          weights: {
+        weights: {
             tech: 0.35,
             leadership: 0.25,
             experience: 0.20,
             education: 0.10,
             cultural: 0.10,
           },
-        },
       });
 
       expect(result.success).toBe(false);
@@ -483,7 +451,7 @@ describe('HRCompensationEngine', () => {
     it('rejects a stage-3 action while currentStage=expert-selection', async () => {
       const result = await engine.applyAction(testParticipantId, {
         stage: 'candidate-ranking',
-        data: { ranking: ['cand1', 'cand2', 'cand3', 'cand4'] },
+        ranking: ['cand1', 'cand2', 'cand3', 'cand4'],
       });
 
       expect(result.success).toBe(false);
@@ -497,14 +465,14 @@ describe('HRCompensationEngine', () => {
       // Advance to stage 2 legitimately
       await engine.applyAction(testParticipantId, {
         stage: 'expert-selection',
-        data: { expertIds: ['exp1', 'exp2'] },
+        expertIds: ['exp1', 'exp2'],
       });
       expect(engine.getPublicState().currentStage).toBe('attribute-weighting');
 
       // Now try to re-submit stage 1
       const result = await engine.applyAction(testParticipantId, {
         stage: 'expert-selection',
-        data: { expertIds: ['exp3'] },
+        expertIds: ['exp3'],
       });
 
       expect(result.success).toBe(false);
@@ -517,14 +485,14 @@ describe('HRCompensationEngine', () => {
       // Advance to stage 2 legitimately
       await engine.applyAction(testParticipantId, {
         stage: 'expert-selection',
-        data: { expertIds: ['exp1', 'exp2'] },
+        expertIds: ['exp1', 'exp2'],
       });
       expect(engine.getPublicState().currentStage).toBe('attribute-weighting');
 
       // Try to skip stage 2 by submitting candidate-ranking directly
       const result = await engine.applyAction(testParticipantId, {
         stage: 'candidate-ranking',
-        data: { ranking: ['cand1', 'cand2', 'cand3', 'cand4'] },
+        ranking: ['cand1', 'cand2', 'cand3', 'cand4'],
       });
 
       expect(result.success).toBe(false);
@@ -538,20 +506,18 @@ describe('HRCompensationEngine', () => {
       // Advance to stage 3 legitimately
       await engine.applyAction(testParticipantId, {
         stage: 'expert-selection',
-        data: { expertIds: ['exp1', 'exp2'] },
+        expertIds: ['exp1', 'exp2'],
       });
       await engine.applyAction(testParticipantId, {
         stage: 'attribute-weighting',
-        data: {
-          weights: { tech: 0.35, leadership: 0.25, experience: 0.20, education: 0.10, cultural: 0.10 },
-        },
+        weights: { tech: 0.35, leadership: 0.25, experience: 0.20, education: 0.10, cultural: 0.10 },
       });
       expect(engine.getPublicState().currentStage).toBe('candidate-ranking');
 
       // Try to re-submit stage 1
       const result = await engine.applyAction(testParticipantId, {
         stage: 'expert-selection',
-        data: { expertIds: ['exp3'] },
+        expertIds: ['exp3'],
       });
 
       expect(result.success).toBe(false);
@@ -563,22 +529,18 @@ describe('HRCompensationEngine', () => {
       // Advance to stage 3 legitimately
       await engine.applyAction(testParticipantId, {
         stage: 'expert-selection',
-        data: { expertIds: ['exp1', 'exp2'] },
+        expertIds: ['exp1', 'exp2'],
       });
       await engine.applyAction(testParticipantId, {
         stage: 'attribute-weighting',
-        data: {
-          weights: { tech: 0.35, leadership: 0.25, experience: 0.20, education: 0.10, cultural: 0.10 },
-        },
+        weights: { tech: 0.35, leadership: 0.25, experience: 0.20, education: 0.10, cultural: 0.10 },
       });
       expect(engine.getPublicState().currentStage).toBe('candidate-ranking');
 
       // Try to re-submit stage 2
       const result = await engine.applyAction(testParticipantId, {
         stage: 'attribute-weighting',
-        data: {
-          weights: { tech: 0.20, leadership: 0.20, experience: 0.20, education: 0.20, cultural: 0.20 },
-        },
+        weights: { tech: 0.20, leadership: 0.20, experience: 0.20, education: 0.20, cultural: 0.20 },
       });
 
       expect(result.success).toBe(false);
@@ -589,29 +551,27 @@ describe('HRCompensationEngine', () => {
     it('still allows the legitimate forward path 1 -> 2 -> 3', async () => {
       const stage1 = await engine.applyAction(testParticipantId, {
         stage: 'expert-selection',
-        data: { expertIds: ['exp1', 'exp2'] },
+        expertIds: ['exp1', 'exp2'],
       });
       expect(stage1.success).toBe(true);
       expect(engine.getPublicState().currentStage).toBe('attribute-weighting');
 
       const stage2 = await engine.applyAction(testParticipantId, {
         stage: 'attribute-weighting',
-        data: {
-          weights: {
+        weights: {
             tech: 0.35,
             leadership: 0.25,
             experience: 0.20,
             education: 0.10,
             cultural: 0.10,
           },
-        },
       });
       expect(stage2.success).toBe(true);
       expect(engine.getPublicState().currentStage).toBe('candidate-ranking');
 
       const stage3 = await engine.applyAction(testParticipantId, {
         stage: 'candidate-ranking',
-        data: { ranking: ['cand1', 'cand2', 'cand3', 'cand4'] },
+        ranking: ['cand1', 'cand2', 'cand3', 'cand4'],
       });
       expect(stage3.success).toBe(true);
       expect(stage3.data?.isComplete).toBe(true);
@@ -687,17 +647,15 @@ describe('HRCompensationEngine', () => {
     it('advanceRound should reflect isComplete once all three stages are done', async () => {
       await engine.applyAction(testParticipantId, {
         stage: 'expert-selection',
-        data: { expertIds: ['exp1', 'exp2'] },
+        expertIds: ['exp1', 'exp2'],
       });
       await engine.applyAction(testParticipantId, {
         stage: 'attribute-weighting',
-        data: {
-          weights: { tech: 0.35, leadership: 0.25, experience: 0.20, education: 0.10, cultural: 0.10 },
-        },
+        weights: { tech: 0.35, leadership: 0.25, experience: 0.20, education: 0.10, cultural: 0.10 },
       });
       await engine.applyAction(testParticipantId, {
         stage: 'candidate-ranking',
-        data: { ranking: ['cand1', 'cand2', 'cand3', 'cand4'] },
+        ranking: ['cand1', 'cand2', 'cand3', 'cand4'],
       });
 
       const result = await engine.advanceRound();
@@ -716,17 +674,15 @@ describe('HRCompensationEngine', () => {
 
       await engine.applyAction(testParticipantId, {
         stage: 'expert-selection',
-        data: { expertIds: ['exp1'] },
+        expertIds: ['exp1'],
       });
       await engine.applyAction(testParticipantId, {
         stage: 'attribute-weighting',
-        data: {
-          weights: { tech: 0.35, leadership: 0.25, experience: 0.20, education: 0.10, cultural: 0.10 },
-        },
+        weights: { tech: 0.35, leadership: 0.25, experience: 0.20, education: 0.10, cultural: 0.10 },
       });
       const finalAction = await engine.applyAction(testParticipantId, {
         stage: 'candidate-ranking',
-        data: { ranking: ['cand1', 'cand2', 'cand3', 'cand4'] },
+        ranking: ['cand1', 'cand2', 'cand3', 'cand4'],
       });
       expect(finalAction.success).toBe(true);
       expect(finalAction.data?.isComplete).toBe(true);
@@ -745,7 +701,7 @@ describe('HRCompensationEngine', () => {
       // After expert selection — pre-stage 2
       await engine.applyAction(testParticipantId, {
         stage: 'expert-selection',
-        data: { expertIds: ['exp1', 'exp2'] },
+        expertIds: ['exp1', 'exp2'],
       });
       participantState = engine.getParticipantState(testParticipantId);
       expect(participantState.optimalValues).toBeUndefined();
@@ -753,9 +709,7 @@ describe('HRCompensationEngine', () => {
       // After attribute weighting — pre-stage 3
       await engine.applyAction(testParticipantId, {
         stage: 'attribute-weighting',
-        data: {
-          weights: { tech: 0.35, leadership: 0.25, experience: 0.20, education: 0.10, cultural: 0.10 },
-        },
+        weights: { tech: 0.35, leadership: 0.25, experience: 0.20, education: 0.10, cultural: 0.10 },
       });
       participantState = engine.getParticipantState(testParticipantId);
       expect(participantState.optimalValues).toBeUndefined();
@@ -763,7 +717,7 @@ describe('HRCompensationEngine', () => {
       // After candidate ranking — sim is now complete; optimal values revealed
       await engine.applyAction(testParticipantId, {
         stage: 'candidate-ranking',
-        data: { ranking: ['cand1', 'cand2', 'cand3', 'cand4'] },
+        ranking: ['cand1', 'cand2', 'cand3', 'cand4'],
       });
       participantState = engine.getParticipantState(testParticipantId);
       expect(participantState.isComplete).toBe(true);

@@ -191,6 +191,38 @@ wait for parent reload) must subscribe locally inside their `index.tsx`.
 Pattern established by Fruit Beer (Session 3) and replicated in Customer In
 Store + EV Gambit.
 
+**Canonical action contract (HS-1, 2026-05-14).** The action object delivered
+to `engine.applyAction(participantId, action)` MUST have the shape:
+
+```
+{ actionType: string, ...payloadFields }
+```
+
+— `actionType` lives at the top level alongside the payload's fields. There
+is NO nested `data` wrapper. The bridge that produces this shape is
+[backend/src/sockets/index.ts:225-228](backend/src/sockets/index.ts#L225-L228):
+the socket handler calls `engine.applyAction(participantId, { actionType,
+...actionPayload })` after receiving `{ sessionId, participantId, actionType,
+payload }` from `socketService.sendAction`. The UI calls
+`onAction(actionType, payload)` with the **flat** payload.
+
+Engines destructure either fields directly (`const { x, y } = action`) or via
+spread-rest (`const { actionType, ...payload } = action;
+this.handler(payload)`). Both are canonical; pick whichever keeps the
+existing handler API surface intact. The discriminator field is normally
+`actionType` but a sim may use its own top-level field (HRComp uses
+`stage`, DemandForecast uses `phase` / `method`) — the rule is only that
+the discriminator sits at the top level of the action object, never under
+`data`.
+
+Frontend type narrowing lives in
+[frontend/src/components/games/types.ts](frontend/src/components/games/types.ts):
+each sim's `index.tsx` declares a discriminated `*Action` union and
+parameterises `GameProps<MySimAction>`, turning wrong-shape onAction calls
+into compile errors. See
+[audits/HANDSHAKE_STANDARDIZATION.md](audits/HANDSHAKE_STANDARDIZATION.md)
+for the full before/after.
+
 ### 5.3 Schema philosophy
 
 Universal schema (one set of tables for all 11 sims). Sim-specific data lives
@@ -234,7 +266,16 @@ non-bot participants submit, with a `facilitator_advance_round` manual override.
 **Phase 1 progress: 5 of 5 sims complete (engine + UI). Session 11 wrap-up
 remaining (smoke tests + HR Comp stage-validation patch).** Defect Detectives
 backend (Session 9) and UI (Session 10) both landed 2026-05-08. Total backend
-tests: **154 passing** (118 prior + 36 Defect Detectives).
+tests: **233 passing** (227 prior + 6 new HandshakeContract integration
+tests from HS-1).
+
+**No Phase-1 sim was ACTUALLY BROKEN before HS-1.** The handshake-contract
+audit (Session HS-1, 2026-05-14) found that all 6 Phase-1 sim UIs happened
+to match their engines' destructure shape, so every sim routed correctly at
+runtime. The drift was a latent contract failure (4 engines used a nested
+`data` wrapper inconsistently with the platform's flat default) — HS-1
+standardised it before it caught anyone. See
+[audits/HANDSHAKE_STANDARDIZATION.md](audits/HANDSHAKE_STANDARDIZATION.md).
 
 **Frontend:** dispatcher pattern landed Session 2 (2026-05-05).
 `pages/sessions/[sessionId].tsx` shrank from 2,324 → ~570 lines and now does
@@ -430,6 +471,17 @@ Don't add anything to the schema unless you've exhausted JSON-column options.
    server starts. **Decision needed for Phase 2:** dedicated tsc-strict
    cleanup session, or ride them indefinitely.
 
+8. **Phase-2 sims with handshake-contract-aligned engines but no UI.**
+   `dual-source-dilemma`, `order-ops`, and `sustainable-select` had their
+   engines flattened to the canonical action contract in Session HS-1
+   (2026-05-14) — the `{ actionType, data }` → `{ actionType, ...payload }`
+   change. Engine tests don't exist for these sims, so the change is
+   regression-tested only by the new HandshakeContract integration suite
+   indirectly via inheritance. When their UIs ship (Phase 2), send flat
+   payloads — `{ data: { ... } }` is no longer valid. Onion Dilemma and
+   TOC Factory are still skeletons and must adopt the canonical contract
+   when their engines are written.
+
 ---
 
 ## 12. Common Pitfalls
@@ -587,6 +639,35 @@ at least one — they are systematic, not one-off.
 - **When to apply:** every audit phase. Single-source claims masquerading
   as canonical are how architectural mistakes happen.
 
+**Pattern H: Contract drift across sessions**
+- Multi-session builds let each session guess an unenforced cross-cutting
+  contract; nothing in the type system prevents UIs and engines from
+  drifting apart in the parts they each only see one side of. Eventually
+  someone follows a non-representative case and writes a new sim that
+  routes through the bridge but lands in a destructure shape its engine
+  doesn't expect — the action is delivered with the right `actionType`
+  but `undefined` payload fields, and the engine rejects with a generic
+  validation error that doesn't reveal the cause.
+- Surfaced by Session HS-1 (2026-05-14): the onAction → socket → engine
+  pipeline had no enforced contract. Three different engine destructure
+  shapes (flat / hybrid / nested `data`) and two different UI payload
+  shapes (flat / nested `data`) coexisted; the system worked only because
+  each UI happened to match its engine.
+- **The fix is a typed contract, not discipline.** HS-1 narrowed
+  `GameProps.onAction` to a discriminated-union-aware signature; each
+  sim's `index.tsx` declares its action shapes at the top and a
+  wrong-shape dispatch becomes a compile error. The wire contract is
+  documented in §5.2 and exercised by
+  `__tests__/HandshakeContract.test.ts` (one per Phase-1 sim) — that
+  suite builds the action object exactly the way the production bridge
+  builds it, catching future drift between any UI's payload and its
+  engine's destructure.
+- **When to apply:** any cross-cutting platform contract (action input,
+  ActionResult, publicState shape, websocket events, ...) that
+  multiple sessions touch independently. Make it a type, document the
+  bridge in CLAUDE.md, and add an integration test that exercises the
+  edge the unit tests skip.
+
 **Pedagogy audit checklist (run alongside the integrity patterns):**
 - Headline teaching metric is computed, not stubbed (caught: Fruit Beer
   bullwhip = 1.0; Defect Detectives hardcoded "Scratch and Misalignment
@@ -603,12 +684,17 @@ at least one — they are systematic, not one-off.
 
 ---
 
-*Last updated: 2026-05-14 (post-Session-DF-3a: Demand Forecast Challenge
-UI input side — 7 components under `components/games/DemandForecast/`
-covering pattern inference, demand-history chart, method picker with
-dynamic param forms for all 6 methods, and Pattern E type narrowing on
-the client `PublicState`. Engine + input UI complete; DF-3b feedback
-side and scorecard remain. 227 backend tests green; frontend
-type-check + production build pass clean). When making non-trivial
-structural changes to engine architecture, schema, or workflow, update
-this file in the same commit.*
+*Last updated: 2026-05-14 (post-Session-HS-1: handshake-contract
+standardization — canonical action contract `{ actionType, ...payload }`
+documented in §5.2; 4 engines (HRComp, DefectDetectives, OrderOps,
+SustainableSelect) and 2 UIs (HRComp, DefectDetectives) aligned to the
+flat shape; all 6 Phase-1 sims declare typed `*Action` discriminated
+unions at the top of their `index.tsx` and parameterise `GameProps<MyAction>`,
+turning wrong-shape onAction calls into compile errors; new
+`__tests__/HandshakeContract.test.ts` adds 6 integration-style tests
+(one per Phase-1 sim) that build the action object the way the
+production bridge does. 233 backend tests green; frontend type-check +
+production build pass clean. NO Phase-1 sim was actually broken before
+HS-1 — the drift was latent and would have surfaced when Phase-2 UIs
+were added). When making non-trivial structural changes to engine
+architecture, schema, or workflow, update this file in the same commit.*

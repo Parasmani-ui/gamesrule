@@ -13,6 +13,8 @@ type Role = 'RETAILER' | 'WHOLESALER' | 'DISTRIBUTOR' | 'MANUFACTURER';
 
 const ALL_ROLES: Role[] = ['RETAILER', 'WHOLESALER', 'DISTRIBUTOR', 'MANUFACTURER'];
 
+type FruitBeerAction = { actionType: 'place_order'; orderQuantity: number };
+
 export function FruitBeerGame({
   participantId,
   state,
@@ -20,7 +22,7 @@ export function FruitBeerGame({
   isFacilitator,
   actionLoading,
   actionFeedback,
-}: GameProps) {
+}: GameProps<FruitBeerAction>) {
   // Merge in any updates that arrive via round_complete / participant_state_update.
   // The parent [sessionId].tsx only listens for session_update, which does not
   // fire after auto-advance — so without local listeners here, the player who

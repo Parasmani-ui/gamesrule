@@ -52,6 +52,14 @@ import { MethodPicker } from './MethodPicker';
  *     }
  *   forecasting phase: same shape + phase='forecasting', inferenceGuess set.
  */
+type DemandForecastUiAction =
+  | {
+      actionType: 'infer-pattern';
+      phase: 'pattern-inference';
+      guess: DemandPattern;
+    }
+  | ({ actionType: 'forecast' } & ForecastAction);
+
 export function DemandForecastGame({
   participantId,
   state,
@@ -59,7 +67,7 @@ export function DemandForecastGame({
   isFacilitator,
   actionLoading,
   actionFeedback,
-}: GameProps) {
+}: GameProps<DemandForecastUiAction>) {
   const typedState = state as DemandForecastParticipantState | undefined;
   const [actionResultError, setActionResultError] = useState<string | null>(null);
 

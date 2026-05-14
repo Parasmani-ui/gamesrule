@@ -7,6 +7,21 @@ import { Results } from './Results';
 
 type Stage = 'expert-selection' | 'attribute-weighting' | 'candidate-ranking' | 'complete';
 
+/**
+ * Discriminated union for HR Compensation action payloads. Note the engine
+ * uses `stage` as its sim-specific discriminator (CLAUDE.md §5.2) while
+ * `actionType` is also present at the top level — both fields live on the
+ * action object. Wrong-shape dispatches are a compile error.
+ */
+type HRCompensationAction =
+  | { actionType: 'select_experts'; stage: 'expert-selection'; expertIds: string[] }
+  | {
+      actionType: 'set_weights';
+      stage: 'attribute-weighting';
+      weights: { [key: string]: number };
+    }
+  | { actionType: 'submit_ranking'; stage: 'candidate-ranking'; ranking: string[] };
+
 const STAGE_TITLES: Record<Stage, string> = {
   'expert-selection': 'Stage 1 · Select Experts',
   'attribute-weighting': 'Stage 2 · Weight Attributes',
@@ -23,7 +38,7 @@ export function HRCompensationGame({
   isFacilitator,
   actionLoading,
   actionFeedback,
-}: GameProps) {
+}: GameProps<HRCompensationAction>) {
   if (!state) {
     return (
       <div className="bg-slate-800/60 border border-slate-700 rounded-2xl p-8 text-center text-slate-300">
@@ -82,7 +97,7 @@ export function HRCompensationGame({
                 onSubmit={expertIds =>
                   onAction('select_experts', {
                     stage: 'expert-selection',
-                    data: { expertIds },
+                    expertIds,
                   })
                 }
                 actionLoading={actionLoading}
@@ -96,7 +111,7 @@ export function HRCompensationGame({
                 onSubmit={weights =>
                   onAction('set_weights', {
                     stage: 'attribute-weighting',
-                    data: { weights },
+                    weights,
                   })
                 }
                 actionLoading={actionLoading}
@@ -112,7 +127,7 @@ export function HRCompensationGame({
                 onSubmit={ranking =>
                   onAction('submit_ranking', {
                     stage: 'candidate-ranking',
-                    data: { ranking },
+                    ranking,
                   })
                 }
                 actionLoading={actionLoading}

@@ -51,6 +51,17 @@ interface DecisionOption {
   cost: number;
 }
 
+type EVGambitAction =
+  | {
+      actionType: 'make-decision';
+      round: number;
+      decisionId: string;
+      rationale: string;
+      alternatives: string;
+    }
+  | { actionType: 'submit-quiz'; round: number; answers: string[] }
+  | { actionType: 'continue-to-next-event'; round: number };
+
 export function EVGambitGame({
   participantId,
   state,
@@ -58,7 +69,7 @@ export function EVGambitGame({
   isFacilitator,
   actionLoading,
   actionFeedback,
-}: GameProps) {
+}: GameProps<EVGambitAction>) {
   const [localPhase, setLocalPhase] = useState<LocalPhase>('briefing');
   const [pickedDecisionId, setPickedDecisionId] = useState<string | null>(null);
   const [rationale, setRationale] = useState('');

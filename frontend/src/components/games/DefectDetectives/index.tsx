@@ -12,8 +12,25 @@ import { GameComplete } from './GameComplete';
 import {
   DefectDetectivesUiState,
   InspectionStrategy,
+  ToolName,
   isToolName,
 } from './types';
+
+/**
+ * Discriminated union for Defect Detectives action payloads — exercises the
+ * tightened GameProps contract from `components/games/types.ts`. A
+ * future onAction call with a wrong shape (e.g. the pre-Session-HS-1
+ * `{ data: { tool } }`) is a compile error rather than a silent runtime
+ * routing failure.
+ */
+type DefectDetectivesAction =
+  | { actionType: 'apply-qc-tool'; tool: ToolName }
+  | {
+      actionType: 'set-inspection-strategy';
+      strategy: InspectionStrategy;
+      sampleSize?: number;
+    }
+  | { actionType: 'process-batch' };
 
 /**
  * Defect Detectives — single-player Quality Control Manager simulation.
@@ -33,10 +50,10 @@ import {
  *   - metrics: DefectDetectivesMetrics (sync — Pattern D)
  *   - isComplete: boolean
  *
- * Action contract — engine reads `data` off the action object:
- *   onAction('apply-qc-tool',           { data: { tool: <ToolName> } })
- *   onAction('set-inspection-strategy', { data: { strategy, sampleSize? } })
- *   onAction('process-batch',           { data: {} })
+ * Action contract — canonical { actionType, ...payload } per CLAUDE.md §5.2:
+ *   onAction('apply-qc-tool',           { tool: <ToolName> })
+ *   onAction('set-inspection-strategy', { strategy, sampleSize? })
+ *   onAction('process-batch',           {})
  *
  * Pedagogy: do NOT pre-narrate the dataset's bias anywhere before the player
  * applies tools. The whole point is for Pareto / Check Sheet / Scatter to
@@ -58,7 +75,7 @@ export function DefectDetectivesGame({
   isFacilitator,
   actionLoading,
   actionFeedback,
-}: GameProps) {
+}: GameProps<DefectDetectivesAction>) {
   const [selectedTool, setSelectedTool] = useState<string | null>(null);
   const [lastToolResult, setLastToolResult] = useState<{
     tool: string;
@@ -147,19 +164,20 @@ export function DefectDetectivesGame({
 
   const handleApplyTool = (tool: string) => {
     if (!isToolName(tool)) return; // Pattern B defense: never send unknown names
-    onAction('apply-qc-tool', { data: { tool } });
+    onAction('apply-qc-tool', { tool });
   };
 
   const handleSetStrategy = (strategy: InspectionStrategy, sampleSize?: number) => {
-    onAction('set-inspection-strategy', {
-      data: strategy === 'sampling' && sampleSize !== undefined
+    onAction(
+      'set-inspection-strategy',
+      strategy === 'sampling' && sampleSize !== undefined
         ? { strategy, sampleSize }
-        : { strategy },
-    });
+        : { strategy }
+    );
   };
 
   const handleProcessBatch = () => {
-    onAction('process-batch', { data: {} });
+    onAction('process-batch', {});
   };
 
   // ----- Game complete -----

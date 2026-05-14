@@ -162,7 +162,12 @@ export class HRCompensationEngine extends BaseGameEngine {
   async applyAction(_participantId: string, action: any): Promise<ActionResult> {
     this.ensureInitialized();
 
-    const { stage, data } = action;
+    // Canonical contract (CLAUDE.md §5.2): action = { actionType, ...payload }.
+    // HRComp uses `stage` as its sim-specific discriminator (lives at the top
+    // level of the payload alongside actionType); per-stage payload fields
+    // (expertIds, weights, ranking) likewise live at the top level — no
+    // nested `data` wrapper.
+    const { actionType: _actionType, stage, ...payload } = action || {};
 
     if (this.state.isComplete) {
       return {
@@ -173,13 +178,13 @@ export class HRCompensationEngine extends BaseGameEngine {
 
     switch (stage) {
       case 'expert-selection':
-        return await this.handleExpertSelection(data);
+        return await this.handleExpertSelection(payload);
 
       case 'attribute-weighting':
-        return await this.handleAttributeWeighting(data);
+        return await this.handleAttributeWeighting(payload);
 
       case 'candidate-ranking':
-        return await this.handleCandidateRanking(data);
+        return await this.handleCandidateRanking(payload);
 
       default:
         return {

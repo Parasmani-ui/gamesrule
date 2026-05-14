@@ -269,7 +269,9 @@ export class DefectDetectivesEngine extends BaseGameEngine {
 
   async applyAction(_participantId: string, action: any): Promise<ActionResult> {
     this.ensureInitialized();
-    const { actionType, data } = action || {};
+    // Canonical contract (CLAUDE.md §5.2): action = { actionType, ...payload }
+    // — payload fields live at the top level, never under a nested `data` key.
+    const { actionType, ...payload } = action || {};
 
     if (this.state.isComplete) {
       return { success: false, message: 'Simulation already complete' };
@@ -277,9 +279,9 @@ export class DefectDetectivesEngine extends BaseGameEngine {
 
     switch (actionType) {
       case 'apply-qc-tool':
-        return await this.applyQCTool(data || {});
+        return await this.applyQCTool(payload);
       case 'set-inspection-strategy':
-        return await this.setInspectionStrategy(data || {});
+        return await this.setInspectionStrategy(payload);
       case 'process-batch':
         return await this.processBatch();
       default:

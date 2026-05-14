@@ -119,16 +119,16 @@ describe('DefectDetectivesEngine', () => {
     it('rejects an unknown tool name with explicit error', async () => {
       const result = await engine.applyAction(P1, {
         actionType: 'apply-qc-tool',
-        data: { tool: 'MagicWand' },
+        tool: 'MagicWand',
       });
       expect(result.success).toBe(false);
       expect(result.message).toContain('Unknown QC tool');
     });
 
     it('rejects an empty / missing tool name', async () => {
-      const r1 = await engine.applyAction(P1, { actionType: 'apply-qc-tool', data: {} });
+      const r1 = await engine.applyAction(P1, { actionType: 'apply-qc-tool',  });
       expect(r1.success).toBe(false);
-      const r2 = await engine.applyAction(P1, { actionType: 'apply-qc-tool', data: { tool: '' } });
+      const r2 = await engine.applyAction(P1, { actionType: 'apply-qc-tool', tool: '' });
       expect(r2.success).toBe(false);
     });
 
@@ -138,7 +138,7 @@ describe('DefectDetectivesEngine', () => {
       for (let i = 0; i < 30; i++) {
         const r = await engine.applyAction(P1, {
           actionType: 'apply-qc-tool',
-          data: { tool: `FakeTool${i}` },
+          tool: `FakeTool${i}`,
         });
         expect(r.success).toBe(false);
       }
@@ -151,7 +151,7 @@ describe('DefectDetectivesEngine', () => {
       for (const tool of ALL_TOOLS) {
         const r = await engine.applyAction(P1, {
           actionType: 'apply-qc-tool',
-          data: { tool },
+          tool,
         });
         expect(r.success).toBe(true);
       }
@@ -162,12 +162,12 @@ describe('DefectDetectivesEngine', () => {
     it('rejects re-applying the same tool (Pattern C)', async () => {
       const first = await engine.applyAction(P1, {
         actionType: 'apply-qc-tool',
-        data: { tool: 'Pareto Analysis' },
+        tool: 'Pareto Analysis',
       });
       expect(first.success).toBe(true);
       const dup = await engine.applyAction(P1, {
         actionType: 'apply-qc-tool',
-        data: { tool: 'Pareto Analysis' },
+        tool: 'Pareto Analysis',
       });
       expect(dup.success).toBe(false);
       expect(dup.message).toContain('already been applied');
@@ -186,7 +186,7 @@ describe('DefectDetectivesEngine', () => {
     it('rejects negative sampleSize', async () => {
       const r = await engine.applyAction(P1, {
         actionType: 'set-inspection-strategy',
-        data: { strategy: 'sampling', sampleSize: -50 },
+        strategy: 'sampling', sampleSize: -50,
       });
       expect(r.success).toBe(false);
     });
@@ -194,7 +194,7 @@ describe('DefectDetectivesEngine', () => {
     it('rejects non-integer sampleSize', async () => {
       const r = await engine.applyAction(P1, {
         actionType: 'set-inspection-strategy',
-        data: { strategy: 'sampling', sampleSize: 50.5 },
+        strategy: 'sampling', sampleSize: 50.5,
       });
       expect(r.success).toBe(false);
     });
@@ -202,7 +202,7 @@ describe('DefectDetectivesEngine', () => {
     it('rejects sampleSize larger than batchSize', async () => {
       const r = await engine.applyAction(P1, {
         actionType: 'set-inspection-strategy',
-        data: { strategy: 'sampling', sampleSize: 100000 },
+        strategy: 'sampling', sampleSize: 100000,
       });
       expect(r.success).toBe(false);
     });
@@ -210,7 +210,7 @@ describe('DefectDetectivesEngine', () => {
     it('accepts a valid sampleSize within range', async () => {
       const r = await engine.applyAction(P1, {
         actionType: 'set-inspection-strategy',
-        data: { strategy: 'sampling', sampleSize: 200 },
+        strategy: 'sampling', sampleSize: 200,
       });
       expect(r.success).toBe(true);
       expect(engine.getPublicState().sampleSize).toBe(200);
@@ -229,7 +229,7 @@ describe('DefectDetectivesEngine', () => {
     it('Pareto returns real ranked categories with cumulative percentages', async () => {
       const r = await engine.applyAction(P1, {
         actionType: 'apply-qc-tool',
-        data: { tool: 'Pareto Analysis' },
+        tool: 'Pareto Analysis',
       });
       expect(r.success).toBe(true);
       const chart = r.data?.chartData;
@@ -248,7 +248,7 @@ describe('DefectDetectivesEngine', () => {
     it('Histogram returns mean + stddev computed from data', async () => {
       const r = await engine.applyAction(P1, {
         actionType: 'apply-qc-tool',
-        data: { tool: 'Histogram' },
+        tool: 'Histogram',
       });
       expect(r.success).toBe(true);
       const chart = r.data?.chartData;
@@ -262,7 +262,7 @@ describe('DefectDetectivesEngine', () => {
     it('Control Chart computes UCL/LCL = μ ± 3σ from warmup data', async () => {
       const r = await engine.applyAction(P1, {
         actionType: 'apply-qc-tool',
-        data: { tool: 'Control Chart' },
+        tool: 'Control Chart',
       });
       expect(r.success).toBe(true);
       const chart = r.data?.chartData;
@@ -280,7 +280,7 @@ describe('DefectDetectivesEngine', () => {
     it('Scatter computes a real correlation coefficient', async () => {
       const r = await engine.applyAction(P1, {
         actionType: 'apply-qc-tool',
-        data: { tool: 'Scatter Diagram' },
+        tool: 'Scatter Diagram',
       });
       expect(r.success).toBe(true);
       const chart = r.data?.chartData;
@@ -293,7 +293,7 @@ describe('DefectDetectivesEngine', () => {
     it('Check Sheet returns real defect-type tallies', async () => {
       const r = await engine.applyAction(P1, {
         actionType: 'apply-qc-tool',
-        data: { tool: 'Check Sheet' },
+        tool: 'Check Sheet',
       });
       expect(r.success).toBe(true);
       const chart = r.data?.chartData;
@@ -309,7 +309,7 @@ describe('DefectDetectivesEngine', () => {
     it('Fishbone produces scenario-specific structural insight', async () => {
       const r = await engine.applyAction(P1, {
         actionType: 'apply-qc-tool',
-        data: { tool: 'Cause-and-Effect Diagram' },
+        tool: 'Cause-and-Effect Diagram',
       });
       expect(r.success).toBe(true);
       // consumer-goods finger-prints: should mention machine calibration / material
@@ -319,7 +319,7 @@ describe('DefectDetectivesEngine', () => {
     it('Flowchart finding differs by scenario', async () => {
       const consumer = await engine.applyAction(P1, {
         actionType: 'apply-qc-tool',
-        data: { tool: 'Flowchart' },
+        tool: 'Flowchart',
       });
       const consumerInsight = consumer.data?.insight as string;
 
@@ -328,7 +328,7 @@ describe('DefectDetectivesEngine', () => {
       await engine2.initialize({ scenario: 'quick-commerce', rngSeed: 42 });
       const dark = await engine2.applyAction(P1, {
         actionType: 'apply-qc-tool',
-        data: { tool: 'Flowchart' },
+        tool: 'Flowchart',
       });
       const darkInsight = dark.data?.insight as string;
 
@@ -350,7 +350,7 @@ describe('DefectDetectivesEngine', () => {
       // Set 100% inspection so cost is deterministic
       await engine.applyAction(P1, {
         actionType: 'set-inspection-strategy',
-        data: { strategy: '100%' },
+        strategy: '100%',
       });
 
       // Process 5 batches
@@ -371,7 +371,7 @@ describe('DefectDetectivesEngine', () => {
     it('inspection cost scales with sample size', async () => {
       await engine.applyAction(P1, {
         actionType: 'set-inspection-strategy',
-        data: { strategy: 'sampling', sampleSize: 100 },
+        strategy: 'sampling', sampleSize: 100,
       });
       const r1 = await engine.applyAction(P1, { actionType: 'process-batch' });
       expect(r1.data?.costs.inspection).toBe(100 * 100); // sampleSize * inspectionCostPerUnit (₹100)
@@ -381,7 +381,7 @@ describe('DefectDetectivesEngine', () => {
       await engine2.initialize({ rngSeed: 42 });
       await engine2.applyAction(P1, {
         actionType: 'set-inspection-strategy',
-        data: { strategy: 'sampling', sampleSize: 500 },
+        strategy: 'sampling', sampleSize: 500,
       });
       const r2 = await engine2.applyAction(P1, { actionType: 'process-batch' });
       expect(r2.data?.costs.inspection).toBe(500 * 100);
@@ -397,11 +397,11 @@ describe('DefectDetectivesEngine', () => {
       await engine.initialize({ rngSeed: 42 });
       const initial = engine.getPublicState().currentDefectRate;
       // Apply the high-impact tools
-      await engine.applyAction(P1, { actionType: 'apply-qc-tool', data: { tool: 'Control Chart' } });
-      await engine.applyAction(P1, { actionType: 'apply-qc-tool', data: { tool: 'Pareto Analysis' } });
+      await engine.applyAction(P1, { actionType: 'apply-qc-tool', tool: 'Control Chart' });
+      await engine.applyAction(P1, { actionType: 'apply-qc-tool', tool: 'Pareto Analysis' });
       await engine.applyAction(P1, {
         actionType: 'apply-qc-tool',
-        data: { tool: 'Cause-and-Effect Diagram' },
+        tool: 'Cause-and-Effect Diagram',
       });
       const after = engine.getPublicState().currentDefectRate;
       expect(after).toBeLessThan(initial);
@@ -415,14 +415,14 @@ describe('DefectDetectivesEngine', () => {
       await small.initialize({ rngSeed: 42 });
       await small.applyAction(P1, {
         actionType: 'set-inspection-strategy',
-        data: { strategy: 'sampling', sampleSize: 50 },
+        strategy: 'sampling', sampleSize: 50,
       });
 
       const large = new DefectDetectivesEngine('s2');
       await large.initialize({ rngSeed: 42 });
       await large.applyAction(P1, {
         actionType: 'set-inspection-strategy',
-        data: { strategy: 'sampling', sampleSize: 500 },
+        strategy: 'sampling', sampleSize: 500,
       });
 
       let smallDetected = 0;
@@ -442,15 +442,15 @@ describe('DefectDetectivesEngine', () => {
       // Force rate down to target by applying Control Chart (18% reduction)
       // 8 * 0.82 = 6.56, then floor at 6.0 ... actually our floor is min(target, current * (1 - r/100))
       // 8 * 0.82 = 6.56 > target, so currentRate becomes 6.56. Apply Pareto: 6.56 * 0.85 = 5.576 < 6 → flooring at 6.
-      await engine.applyAction(P1, { actionType: 'apply-qc-tool', data: { tool: 'Control Chart' } });
-      await engine.applyAction(P1, { actionType: 'apply-qc-tool', data: { tool: 'Pareto Analysis' } });
+      await engine.applyAction(P1, { actionType: 'apply-qc-tool', tool: 'Control Chart' });
+      await engine.applyAction(P1, { actionType: 'apply-qc-tool', tool: 'Pareto Analysis' });
       const atTarget = engine.getPublicState().currentDefectRate;
       expect(atTarget).toBeLessThanOrEqual(6.5);
 
       // Switch off inspection
       await engine.applyAction(P1, {
         actionType: 'set-inspection-strategy',
-        data: { strategy: 'none' },
+        strategy: 'none',
       });
 
       // Process batches; defect rate should drift up
@@ -539,7 +539,7 @@ describe('DefectDetectivesEngine', () => {
     it('handles all 7 tools applied — defect rate floored at target', async () => {
       await engine.initialize({ rngSeed: 42 });
       for (const tool of ALL_TOOLS) {
-        const r = await engine.applyAction(P1, { actionType: 'apply-qc-tool', data: { tool } });
+        const r = await engine.applyAction(P1, { actionType: 'apply-qc-tool', tool });
         expect(r.success).toBe(true);
       }
       const pub = engine.getPublicState();
@@ -559,7 +559,7 @@ describe('DefectDetectivesEngine', () => {
       await engine.initialize({ rngSeed: 42 });
       await engine.applyAction(P1, {
         actionType: 'set-inspection-strategy',
-        data: { strategy: '100%' },
+        strategy: '100%',
       });
       for (let i = 0; i < 5; i++) {
         const r = await engine.applyAction(P1, { actionType: 'process-batch' });
@@ -577,7 +577,7 @@ describe('DefectDetectivesEngine', () => {
 
     it('rejects unknown actionType', async () => {
       await engine.initialize({ rngSeed: 42 });
-      const r = await engine.applyAction(P1, { actionType: 'foo', data: {} } as any);
+      const r = await engine.applyAction(P1, { actionType: 'foo',  } as any);
       expect(r.success).toBe(false);
       expect(r.message).toContain('Unknown action type');
     });
@@ -590,7 +590,7 @@ describe('DefectDetectivesEngine', () => {
   describe('computeMetrics shape', () => {
     it('returns expected fields including four-bucket cost breakdown', async () => {
       await engine.initialize({ rngSeed: 42 });
-      await engine.applyAction(P1, { actionType: 'apply-qc-tool', data: { tool: 'Control Chart' } });
+      await engine.applyAction(P1, { actionType: 'apply-qc-tool', tool: 'Control Chart' });
       await engine.applyAction(P1, { actionType: 'process-batch' });
       const m = await engine.computeMetrics();
 

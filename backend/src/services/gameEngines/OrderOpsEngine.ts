@@ -139,7 +139,9 @@ export class OrderOpsEngine extends BaseGameEngine {
   async applyAction(participantId: string, action: any): Promise<ActionResult> {
     this.ensureInitialized();
 
-    const { actionType, data } = action;
+    // Canonical contract (CLAUDE.md §5.2): action = { actionType, ...payload }
+    // — payload fields live at the top level, never under a nested `data` key.
+    const { actionType, ...payload } = action || {};
 
     if (this.state.isComplete) {
       return {
@@ -150,11 +152,11 @@ export class OrderOpsEngine extends BaseGameEngine {
 
     switch (actionType) {
       case 'assign-driver':
-        return await this.assignDriverToOrder(data);
-      
+        return await this.assignDriverToOrder(payload);
+
       case 'advance-time':
         return await this.advanceTime();
-      
+
       default:
         return {
           success: false,

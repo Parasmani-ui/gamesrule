@@ -106,7 +106,9 @@ export class SustainableSelectEngine extends BaseGameEngine {
   async applyAction(participantId: string, action: any): Promise<ActionResult> {
     this.ensureInitialized();
 
-    const { actionType, data } = action;
+    // Canonical contract (CLAUDE.md §5.2): action = { actionType, ...payload }
+    // — payload fields live at the top level, never under a nested `data` key.
+    const { actionType, ...payload } = action || {};
 
     if (this.state.isComplete) {
       return {
@@ -117,14 +119,14 @@ export class SustainableSelectEngine extends BaseGameEngine {
 
     switch (actionType) {
       case 'select-methods':
-        return await this.selectMethods(data);
-      
+        return await this.selectMethods(payload);
+
       case 'run-analysis':
         return await this.runAnalysis();
-      
+
       case 'submit-ranking':
-        return await this.submitRanking(data);
-      
+        return await this.submitRanking(payload);
+
       default:
         return {
           success: false,
