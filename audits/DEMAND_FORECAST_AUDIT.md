@@ -1,6 +1,104 @@
 # Demand Forecast Challenge — Engine Audit
 
-**Status: Session DF-3a complete (UI input side landed 2026-05-14).**
+**Status: Session DF-3b complete — Phase 1.5 COMPLETE (2026-05-15).**
+
+Demand Forecast is now a fully-shipped 6th simulation. The full session arc:
+
+  - **DF-1 (2026-05-11)** — audit. Verdict: full rewrite (Option C) as Phase 1.5.
+  - **DF-2a (2026-05-14)** — backend foundation: 6 method helpers, seeded RNG,
+    method+param validation, async/sync split, MAPE skip-period handling.
+    40 backend tests.
+  - **DF-2b (2026-05-14)** — pedagogy layer: pattern-inference action,
+    per-participant state map, Pattern A sanitization (pattern hidden from
+    publicState), 3-component scoring (inference + method-appropriateness +
+    accuracy). 67 backend tests, 227 total platform tests.
+  - **DF-3a (2026-05-14)** — UI input side: 7 components, Pattern E type
+    narrowing, MethodPicker with per-method param forms, PatternInference
+    cards, DemandHistoryChart.
+  - **DF-3b (2026-05-15)** — UI feedback side: 3 new components +
+    2 modified (PeriodFeedback, MetricsChart, Scorecard; index.tsx + types.ts
+    extended). 10 total UI files under `frontend/src/components/games/
+    DemandForecast/`.
+
+What landed in DF-3b (feedback side):
+- **PeriodFeedback.tsx** — Per-period card shown during 'forecasting' after
+  the first submission. Shows method, params, engine-computed forecast,
+  revealed actual, error (with direction label), and cumulative MAD/MSE/MAPE/
+  Tracking Signal. Tracking Signal pulses amber when |TS| > 4
+  (out-of-control). Does NOT display `usedRecommendedMethod` mid-game
+  (Pattern A) — that flag is stripped from playerForecasts server-side and
+  rendered only in the Scorecard.
+- **MetricsChart.tsx** — Two side-by-side Recharts LineCharts: cumulative
+  MAPE-over-forecast-number and Tracking-Signal-over-forecast-number. TS
+  chart has ±4 reference lines (textbook out-of-control threshold). The
+  series is aggregated from already-emitted per-period
+  absoluteError/error/percentageError — **no forecast math** in the UI,
+  matching the Customer-In-Store learning-curve aggregation pattern.
+  Mounted in both the live forecasting view and the Scorecard.
+- **Scorecard.tsx** — Final reveal screen. **The pedagogical headline is
+  the three-component score breakdown**: each of inferenceScore /
+  methodAppropriatenessScore / accuracyScore renders as its own color-coded
+  card with raw value (0–100), progress bar, weight (%), and weighted
+  contribution. A weighted-sum strip below shows the arithmetic
+  (0.30×… + 0.30×… + 0.40×… = final). Reveal section shows truePattern vs
+  the player's inferenceGuess (correct / close / wrong), pattern rationale,
+  and recommended methods (with the engine's `optimalMethod` highlighted as
+  "best"). Full-series DemandHistoryChart (with the previously-hidden
+  periods now revealed), embedded MetricsChart, and a per-period table
+  with the now-revealed `usedRecommendedMethod` check/X column.
+- **index.tsx** — Replaced the DF-3a placeholder stub with `<Scorecard
+  state={typedState}/>`. Wired PeriodFeedback + MetricsChart into the
+  'forecasting' phase view (shown after `playerForecasts.length > 0` so
+  the first action picker is uncluttered).
+- **types.ts** — Added exported `METHOD_LABEL` / `PATTERN_LABEL` maps so
+  PeriodFeedback and Scorecard share a single source of truth for display
+  strings.
+
+Pattern A defense:
+- The Scorecard reads `state.truePattern`, `state.optimalMethod`,
+  `state.recommendedMethods`, `state.patternRationale`, and
+  `state.fullDemandData` — fields the engine populates ONLY when
+  `state.isComplete === true`. The Scorecard is also only rendered inside
+  the `if (isComplete)` branch. PeriodFeedback explicitly omits
+  `usedRecommendedMethod` from its render (and the field is also stripped
+  by the engine mid-game via `sanitizedForecasts`).
+- Verified: `grep -n "truePattern\|optimalMethod\|recommendedMethods\|patternRationale\|fullDemandData" PeriodFeedback.tsx MetricsChart.tsx`
+  returns zero matches. The reveal fields are only read in Scorecard.tsx
+  and only at the post-complete render boundary.
+
+No forecast math in the UI:
+- PeriodFeedback displays `latestForecast.forecast`, `.actual`, `.error`,
+  `.absoluteError`, `.percentageError`, `state.cumulativeMetrics.*` — all
+  engine-computed.
+- MetricsChart aggregates engine-emitted `absoluteError` / `error` /
+  `percentageError` into running averages. This is metric aggregation, not
+  forecasting (same shape as Customer-In-Store's cumulative-accuracy chart).
+- MethodPicker (DF-3a) sends `{ method, params }`; engine returns the
+  computed forecast. No client-side forecast number anywhere.
+
+Pattern E + HS-1 typed contract:
+- `DemandForecastUiAction` (a discriminated union of `infer-pattern` and
+  `forecast`) is the type parameter on `GameProps<TAction>`. Wrong-shape
+  onAction calls would be a compile error. DF-3b added no new dispatch
+  sites — Scorecard is display-only.
+
+Sim-isolation rule (CLAUDE.md §14):
+- All DF-3b edits are under `frontend/src/components/games/DemandForecast/`.
+- No edits to `[sessionId].tsx`, the slug map, the engine, the schema, or
+  any other sim's components.
+
+Verification (2026-05-15):
+- `cd frontend && npm run type-check` — clean.
+- `cd frontend && npm run build` — successful production build
+  (174 kB for `/sessions/[sessionId]`, up from 170 kB at DF-3a due to the
+  new components + Recharts metrics chart).
+- Manual smoke testing deferred to the platform-wide Session 11b queue per
+  CLAUDE.md §14 working-style rule. The user will manually test all 6 sims
+  (Phase 1 + Demand Forecast) in one pass.
+
+---
+
+**Earlier status: Session DF-3a complete (UI input side landed 2026-05-14).**
 
 What landed in DF-3a (UI scaffold + input side):
 - 7 components under `frontend/src/components/games/DemandForecast/`:

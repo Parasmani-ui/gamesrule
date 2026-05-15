@@ -223,3 +223,25 @@ export interface ForecastAction {
   method: CanonicalMethod;
   params: MethodParams;
 }
+
+// =============================================================================
+// DISPLAY LABEL MAPS — shared by PeriodFeedback + Scorecard. Kept here so the
+// two components agree on a single source of truth and so adding a 7th method
+// later is a one-place edit.
+// =============================================================================
+
+export const METHOD_LABEL: Record<CanonicalMethod, string> = {
+  naive: 'Naive',
+  'moving-average': 'Moving Average',
+  'weighted-moving-average': 'Weighted Moving Average',
+  'exponential-smoothing': 'Exponential Smoothing',
+  'holts-double-es': "Holt's Double ES",
+  'linear-regression': 'Linear Regression',
+};
+
+export const PATTERN_LABEL: Record<DemandPattern, string> = {
+  stationary: 'Stationary',
+  trending: 'Trending',
+  seasonal: 'Seasonal',
+  random: 'Random',
+};

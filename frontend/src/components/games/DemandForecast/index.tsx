@@ -13,6 +13,9 @@ import { ScenarioHeader } from './ScenarioHeader';
 import { DemandHistoryChart } from './DemandHistoryChart';
 import { PatternInference } from './PatternInference';
 import { MethodPicker } from './MethodPicker';
+import { PeriodFeedback } from './PeriodFeedback';
+import { MetricsChart } from './MetricsChart';
+import { Scorecard } from './Scorecard';
 
 /**
  * Demand Forecast Challenge — Phase 1.5 single-player drill.
@@ -33,7 +36,8 @@ import { MethodPicker } from './MethodPicker';
  *
  * Pattern-A reveals (truePattern, optimalMethod, recommendedMethods,
  * patternRationale, fullDemandData) live ONLY in `state` when isComplete.
- * This file does not read or display them — DF-3b's scorecard will.
+ * The forecasting view does not read or display them; the Scorecard
+ * (rendered when isComplete) consumes them.
  *
  * Local socket subscription: we listen for action_result so submission
  * errors / per-period feedback land immediately without waiting for the
@@ -51,6 +55,15 @@ import { MethodPicker } from './MethodPicker';
  *       cumulativeMetrics: {...zeros}, metrics: {...nulls}
  *     }
  *   forecasting phase: same shape + phase='forecasting', inferenceGuess set.
+ *   isComplete (Scorecard reveal):
+ *     state = { ...all of the above, isComplete: true,
+ *       playerForecasts: [...filled with `usedRecommendedMethod` now present],
+ *       truePattern: 'trending', optimalMethod: 'holts-double-es',
+ *       recommendedMethods: ['holts-double-es','linear-regression'],
+ *       patternRationale: 'Trend dominates...', fullDemandData: [...20 nums],
+ *       metrics.playerPerformance: {inferenceScore: 60, methodAppropriatenessScore: 73,
+ *         accuracyScore: 81, finalScore: 73.5, scoringWeights: {0.3, 0.3, 0.4}, ...}
+ *     }
  */
 type DemandForecastUiAction =
   | {
@@ -148,10 +161,12 @@ export function DemandForecastGame({
     onAction('forecast', action);
   };
 
-  // ---- DF-3b placeholder ---------------------------------------------------
-  // DF-3a deliberately does not render the scorecard. The reveal fields
-  // (truePattern, optimalMethod, recommendedMethods, fullDemandData) live in
-  // `typedState` once isComplete; DF-3b will consume them.
+  // ---- post-complete: full scorecard reveal -------------------------------
+  // DF-3b: render the final reveal — three-component score breakdown, the
+  // true-pattern vs guess reveal, recommended methods, full demand series,
+  // metrics chart, per-period table. Reveal fields are gated server-side by
+  // the engine's isComplete check; Scorecard additionally null-checks the
+  // optional reveals as defense-in-depth (Pattern A).
   if (isComplete) {
     return (
       <div className="space-y-6">
@@ -163,22 +178,20 @@ export function DemandForecastGame({
           totalPeriods={totalPeriods}
           warmupPeriods={warmupPeriods}
         />
-        <DemandHistoryChart
-          historicalDemand={historicalDemand}
-          warmupPeriods={warmupPeriods}
-          totalPeriods={totalPeriods}
-          forecasts={playerForecasts.map(f => ({ period: f.period, forecast: f.forecast }))}
-        />
-        <div className="bg-slate-800/60 border border-slate-700 rounded-2xl p-6 text-center">
-          <p className="text-lg font-semibold text-white">Simulation complete</p>
-          <p className="text-sm text-slate-400 mt-1">
-            Final scorecard coming in DF-3b. Your inference guess, the true pattern, the
-            recommended method, and the three-component score will be revealed there.
-          </p>
-        </div>
+        <Scorecard state={typedState} />
       </div>
     );
   }
+
+  const latestForecast =
+    playerForecasts.length > 0 ? playerForecasts[playerForecasts.length - 1] : null;
+  const cumulativeMetrics = typedState.cumulativeMetrics ?? {
+    mad: 0,
+    mse: 0,
+    mape: 0,
+    trackingSignal: 0,
+    mapeExcludedCount: 0,
+  };
 
   const center =
     phase === 'pattern-inference' ? (
@@ -222,6 +235,17 @@ export function DemandForecastGame({
           <span className="font-semibold capitalize">{inferenceGuess}</span>
           <span className="text-slate-500 ml-2">(score revealed at end)</span>
         </div>
+      )}
+
+      {phase === 'forecasting' && playerForecasts.length > 0 && (
+        <>
+          <PeriodFeedback
+            latestForecast={latestForecast}
+            cumulativeMetrics={cumulativeMetrics}
+            totalForecasts={playerForecasts.length}
+          />
+          <MetricsChart playerForecasts={playerForecasts} />
+        </>
       )}
 
       {center}

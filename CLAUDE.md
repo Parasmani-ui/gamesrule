@@ -258,16 +258,19 @@ non-bot participants submit, with a `facilitator_advance_round` manual override.
 | 5 | Defect Detectives | `defect-detectives` | 967 | ✅ (36) | ✅ | **Phase 1 complete — engine + UI shipped 2026-05-08.** Session 9 backend Option B + Session 10 UI landed same day. 14 UI files under `components/games/DefectDetectives/`: scenario header, dataset explorer, 7 QC tool panel, 7 typed chart components (Pareto/Histogram/Control Chart/Scatter/Check Sheet/Fishbone/Flowchart), inspection decision UI, four-bucket cost-of-quality panel, and bias-reveal final screen. Pattern E enforced — `ToolDescriptor` omits `reduction` to match the engine's stripped publicTools(); each tool result is individually typed (no `any`). Bias narrative hidden until GameComplete. |
 | 6 | Order Ops | `order-ops` | 501 | ❌ | ❌ | Built, not in Phase 1. Likely duration/phase drift. |
 | 7 | Dual Source Dilemma | `dual-source-dilemma` | 477 | ❌ | ❌ | Built, not in Phase 1. Generic vs Surat/Bangladesh framing. |
-| 8 | Demand Forecast Challenge | `demand-forecast-challenge` | 1129 | ✅ (67) | partial | **Phase 1.5 — backend complete, UI input side complete, DF-3b remaining.** DF-2a/DF-2b shipped six method helpers, seeded RNG, pattern-inference action (Pattern A — pattern hidden from publicState), three-component scoring (inference + methodAppropriateness + accuracy), per-participant state map. **DF-3a (2026-05-14)** shipped 7 UI files under `components/games/DemandForecast/`: `types.ts` (Pattern E — narrowed `DemandForecastPublicState` omits `truePattern`/`optimalMethod`/`recommendedMethods`/`fullDemandData`; reveals gated on `isComplete`), `index.tsx` (phase dispatcher + local `action_result` subscription), `ScenarioHeader`, `DemandHistoryChart` (Recharts line chart + warmup reference line), `PatternInference` (four-card phase-1 picker), `MethodPicker` (dropdown + dynamic per-method param form for all 6 methods, weight sum-to-1 ±tol validation), `MethodHelpText` (generic method descriptions, never analyses the visible series). Client never computes a forecast number — engine computes from `{method, params}`. DF-3b ships the feedback side: per-period results, metrics charts, final scorecard. |
+| 8 | Demand Forecast Challenge | `demand-forecast-challenge` | 1129 | ✅ (67) | ✅ | **Phase 1.5 COMPLETE — engine + UI + 67 tests shipped 2026-05-15.** DF-2a/DF-2b shipped six method helpers, seeded RNG, pattern-inference action (Pattern A — pattern hidden from publicState), three-component scoring (inference + methodAppropriateness + accuracy), per-participant state map. **DF-3a (2026-05-14)** shipped the UI input side: `types.ts` (Pattern E — narrowed `DemandForecastPublicState` omits `truePattern`/`optimalMethod`/`recommendedMethods`/`fullDemandData`; reveals gated on `isComplete`), `index.tsx`, `ScenarioHeader`, `DemandHistoryChart`, `PatternInference`, `MethodPicker`, `MethodHelpText`. **DF-3b (2026-05-15)** shipped the UI feedback side: `PeriodFeedback` (per-period card with engine-computed forecast/actual/error + cumulative MAD/MSE/MAPE/TS; never displays `usedRecommendedMethod` mid-game — that flag is stripped server-side by sanitizedForecasts), `MetricsChart` (Recharts line charts for cumulative MAPE + Tracking Signal over forecast number, with ±4 out-of-control reference lines), `Scorecard` (post-isComplete reveal — three-component score breakdown with raw / weight / weighted-contribution per component, true-pattern-vs-guess verdict, pattern rationale, recommended methods, full demand series, per-period table with the now-revealed recommended-method flag); plus `index.tsx` (Scorecard replaces the DF-3a placeholder; PeriodFeedback + MetricsChart wired into the forecasting view after first submission) and `types.ts` (added `METHOD_LABEL` / `PATTERN_LABEL` maps). 10 UI files total. Client never computes a forecast number — engine computes from `{method, params}`. |
 | 9 | Customer In A Store | `customer-in-store` | 636 | ✅ (31) | ✅ | **Phase 1 complete** (2026-05-07). 7 substantive defects fixed (intervention modes were stubs, off-by-one in correctAnswer, integrity gates added, question generator de-degenerated). 6 UI files under `components/games/CustomerInStore/`. |
 | 10 | Onion Dilemma | `onion-dilemma` | 135 | ❌ | ❌ | **Skeleton.** Not in Phase 1. |
 | 11 | TOC Factory | `toc-factory` | 124 | ❌ | ❌ | **Skeleton.** Not in Phase 1. |
 
-**Phase 1 progress: 5 of 5 sims complete (engine + UI). Session 11 wrap-up
-remaining (smoke tests + HR Comp stage-validation patch).** Defect Detectives
-backend (Session 9) and UI (Session 10) both landed 2026-05-08. Total backend
-tests: **233 passing** (227 prior + 6 new HandshakeContract integration
-tests from HS-1).
+**Progress: 6 simulations fully shipped (Phase 1 5/5 + Demand Forecast as
+Phase 1.5).** Phase 1's five sims (Fruit Beer, EV Gambit, HR Comp, Defect
+Detectives, Customer In Store) all landed engine + UI by 2026-05-08.
+Demand Forecast Challenge shipped as Phase 1.5 (DF-2a/2b backend + DF-3a/3b
+UI) by 2026-05-15. Session 11 wrap-up still pending (manual smoke tests +
+HR Comp stage-validation patch; now covers all 6 shipped sims). Total
+backend tests: **233 passing** (227 prior + 6 new HandshakeContract
+integration tests from HS-1).
 
 **No Phase-1 sim was ACTUALLY BROKEN before HS-1.** The handshake-contract
 audit (Session HS-1, 2026-05-14) found that all 6 Phase-1 sim UIs happened
@@ -313,6 +316,16 @@ sequence with session map:
 | 9 | Defect Detectives | Backend (Option B) | ✅ |
 | 10 | Defect Detectives | UI | ✅ |
 | 11 | Phase 1 wrap-up | Smoke tests + HR Comp stage-validation patch | ⏳ next |
+
+**Phase 1.5 (Demand Forecast Challenge — full rewrite per audit Option C):**
+
+| Session | Sim | Phase | Status |
+|---|---|---|---|
+| DF-1 | Demand Forecast | Audit (Opus) | ✅ 2026-05-11 |
+| DF-2a | Demand Forecast | Backend foundation (6 method helpers, seeded RNG, validation, async/sync) | ✅ 2026-05-14 |
+| DF-2b | Demand Forecast | Backend pedagogy layer (pattern-inference, per-participant state, Pattern A, 3-component scoring) | ✅ 2026-05-14 |
+| DF-3a | Demand Forecast | UI input side (7 components) | ✅ 2026-05-14 |
+| DF-3b | Demand Forecast | UI feedback side (PeriodFeedback, MetricsChart, Scorecard) | ✅ 2026-05-15 |
 
 ### 7.2 Per-sim workflow
 
@@ -425,15 +438,17 @@ Don't add anything to the schema unless you've exhausted JSON-column options.
    ✅ **Resolved 2026-05-04: dropped from Phase 1.** Engine remains in repo;
    no audit, no UI, no tests in Phase 1. Reconsider in Phase 2 (either
    reverse-engineer to spec or replace with a MSgames-canonical sim).
-   ✅ **Resolved 2026-05-14:** rebuild approved as Phase 1.5. Full-rewrite
-   verdict per audit `audits/DEMAND_FORECAST_AUDIT.md` — the audit
+   ✅ **Fully resolved 2026-05-15:** Phase 1.5 complete; Demand Forecast
+   shipped as the 6th simulation via the audit-confirmed full rewrite.
+   Full-rewrite verdict per `audits/DEMAND_FORECAST_AUDIT.md` — the audit
    established that the source-of-truth is operations-management
    curriculum (Stevenson Ch. 3 / Heizer Ch. 4 / Chase & Jacobs Ch. 17–18),
-   not a missing msgames spec. Sessions: **DF-2a (foundation — landed
-   2026-05-14)**, **DF-2b (pedagogy layer — landed 2026-05-14)**, DF-3a
-   (UI scaffold + history chart + method picker — pending), DF-3b (UI
-   feedback panel + scorecard — pending). Backend is feature-complete;
-   the auto-advance dormancy in `sockets/index.ts` was verified for
+   not a missing msgames spec. Session arc:
+   **DF-1 audit (2026-05-11)** → **DF-2a/DF-2b backend (2026-05-14;
+   foundation + pedagogy layer; 67 tests)** → **DF-3a UI input side
+   (2026-05-14; 7 components)** → **DF-3b UI feedback side (2026-05-15;
+   PeriodFeedback + MetricsChart + Scorecard, 10 UI files total)**. The
+   auto-advance dormancy in `sockets/index.ts` was verified for
    per-participant DF-2b — no cross-cutting socket change required.
 2. **`pages/sessions/[sessionId].tsx` decomposition strategy.** ✅ **Resolved
    2026-05-05.** Decomposed upfront into a slug→component dispatcher. The page
@@ -684,7 +699,22 @@ at least one — they are systematic, not one-off.
 
 ---
 
-*Last updated: 2026-05-14 (post-Session-HS-1: handshake-contract
+*Last updated: 2026-05-15 (post-Session-DF-3b: Demand Forecast Phase 1.5
+COMPLETE — UI feedback side shipped as PeriodFeedback + MetricsChart +
+Scorecard under `frontend/src/components/games/DemandForecast/`. 10 UI
+files total. Scorecard renders the three-component score breakdown
+(inference / methodAppropriateness / accuracy) with raw / weight /
+weighted-contribution per component as the pedagogical headline, plus
+true-pattern reveal, recommended methods, pattern rationale, full demand
+series, and a per-period table with the now-revealed
+usedRecommendedMethod flag. PeriodFeedback + MetricsChart show only
+player-known facts mid-game (Pattern A: no truePattern, no
+optimalMethod, no usedRecommendedMethod). No forecast math in the UI —
+all forecasts and errors come from the engine. Demand Forecast is now
+the 6th fully-shipped simulation. 233 backend tests green; frontend
+type-check + production build pass clean.)
+
+*Earlier: 2026-05-14 (post-Session-HS-1: handshake-contract
 standardization — canonical action contract `{ actionType, ...payload }`
 documented in §5.2; 4 engines (HRComp, DefectDetectives, OrderOps,
 SustainableSelect) and 2 UIs (HRComp, DefectDetectives) aligned to the
